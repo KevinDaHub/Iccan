@@ -1,5 +1,1110 @@
+/*!
+ * iScroll v4.2.5 ~ Copyright (c) 2012 Matteo Spinelli, http://cubiq.org
+ * Released under MIT license, http://cubiq.org/license
+ */
+(function(window, doc){
+var m = Math,
+	dummyStyle = doc.createElement('div').style,
+	vendor = (function () {
+		var vendors = 't,webkitT,MozT,msT,OT'.split(','),
+			t,
+			i = 0,
+			l = vendors.length;
+
+		for ( ; i < l; i++ ) {
+			t = vendors[i] + 'ransform';
+			if ( t in dummyStyle ) {
+				return vendors[i].substr(0, vendors[i].length - 1);
+			}
+		}
+
+		return false;
+	})(),
+	cssVendor = vendor ? '-' + vendor.toLowerCase() + '-' : '',
+
+	// Style properties
+	transform = prefixStyle('transform'),
+	transitionProperty = prefixStyle('transitionProperty'),
+	transitionDuration = prefixStyle('transitionDuration'),
+	transformOrigin = prefixStyle('transformOrigin'),
+	transitionTimingFunction = prefixStyle('transitionTimingFunction'),
+	transitionDelay = prefixStyle('transitionDelay'),
+
+    // Browser capabilities
+	isAndroid = (/android/gi).test(navigator.appVersion),
+	isIDevice = (/iphone|ipad/gi).test(navigator.appVersion),
+	isTouchPad = (/hp-tablet/gi).test(navigator.appVersion),
+
+    has3d = prefixStyle('perspective') in dummyStyle,
+    hasTouch = 'ontouchstart' in window && !isTouchPad,
+    hasTransform = vendor !== false,
+    hasTransitionEnd = prefixStyle('transition') in dummyStyle,
+
+	RESIZE_EV = 'onorientationchange' in window ? 'orientationchange' : 'resize',
+	START_EV = hasTouch ? 'touchstart' : 'mousedown',
+	MOVE_EV = hasTouch ? 'touchmove' : 'mousemove',
+	END_EV = hasTouch ? 'touchend' : 'mouseup',
+	CANCEL_EV = hasTouch ? 'touchcancel' : 'mouseup',
+	TRNEND_EV = (function () {
+		if ( vendor === false ) return false;
+
+		var transitionEnd = {
+				''			: 'transitionend',
+				'webkit'	: 'webkitTransitionEnd',
+				'Moz'		: 'transitionend',
+				'O'			: 'otransitionend',
+				'ms'		: 'MSTransitionEnd'
+			};
+
+		return transitionEnd[vendor];
+	})(),
+
+	nextFrame = (function() {
+		return window.requestAnimationFrame ||
+			window.webkitRequestAnimationFrame ||
+			window.mozRequestAnimationFrame ||
+			window.oRequestAnimationFrame ||
+			window.msRequestAnimationFrame ||
+			function(callback) { return setTimeout(callback, 1); };
+	})(),
+	cancelFrame = (function () {
+		return window.cancelRequestAnimationFrame ||
+			window.webkitCancelAnimationFrame ||
+			window.webkitCancelRequestAnimationFrame ||
+			window.mozCancelRequestAnimationFrame ||
+			window.oCancelRequestAnimationFrame ||
+			window.msCancelRequestAnimationFrame ||
+			clearTimeout;
+	})(),
+
+	// Helpers
+	translateZ = has3d ? ' translateZ(0)' : '',
+
+	// Constructor
+	iScroll = function (el, options) {
+		var that = this,
+			i;
+
+		that.wrapper = typeof el == 'object' ? el : doc.getElementById(el);
+		that.wrapper.style.overflow = 'hidden';
+		that.scroller = that.wrapper.children[0];
+
+		// Default options
+		that.options = {
+			hScroll: true,
+			vScroll: true,
+			x: 0,
+			y: 0,
+			bounce: true,
+			bounceLock: false,
+			momentum: true,
+			lockDirection: true,
+			useTransform: true,
+			useTransition: false,
+			topOffset: 0,
+			checkDOMChanges: false,		// Experimental
+			handleClick: true,
+
+			// Scrollbar
+			hScrollbar: true,
+			vScrollbar: true,
+			fixedScrollbar: isAndroid,
+			hideScrollbar: isIDevice,
+			fadeScrollbar: isIDevice && has3d,
+			scrollbarClass: '',
+
+			// Zoom
+			zoom: false,
+			zoomMin: 1,
+			zoomMax: 4,
+			doubleTapZoom: 2,
+			wheelAction: 'scroll',
+
+			// Snap
+			snap: false,
+			snapThreshold: 1,
+
+			// Events
+			onRefresh: null,
+			onBeforeScrollStart: function (e) { e.preventDefault(); },
+			onScrollStart: null,
+			onBeforeScrollMove: null,
+			onScrollMove: null,
+			onBeforeScrollEnd: null,
+			onScrollEnd: null,
+			onTouchEnd: null,
+			onDestroy: null,
+			onZoomStart: null,
+			onZoom: null,
+			onZoomEnd: null
+		};
+
+		// User defined options
+		for (i in options) that.options[i] = options[i];
+		
+		// Set starting position
+		that.x = that.options.x;
+		that.y = that.options.y;
+
+		// Normalize options
+		that.options.useTransform = hasTransform && that.options.useTransform;
+		that.options.hScrollbar = that.options.hScroll && that.options.hScrollbar;
+		that.options.vScrollbar = that.options.vScroll && that.options.vScrollbar;
+		that.options.zoom = that.options.useTransform && that.options.zoom;
+		that.options.useTransition = hasTransitionEnd && that.options.useTransition;
+
+		// Helpers FIX ANDROID BUG!
+		// translate3d and scale doesn't work together!
+		// Ignoring 3d ONLY WHEN YOU SET that.options.zoom
+		if ( that.options.zoom && isAndroid ){
+			translateZ = '';
+		}
+		
+		// Set some default styles
+		that.scroller.style[transitionProperty] = that.options.useTransform ? cssVendor + 'transform' : 'top left';
+		that.scroller.style[transitionDuration] = '0';
+		that.scroller.style[transformOrigin] = '0 0';
+		if (that.options.useTransition) that.scroller.style[transitionTimingFunction] = 'cubic-bezier(0.33,0.66,0.66,1)';
+		
+		if (that.options.useTransform) that.scroller.style[transform] = 'translate(' + that.x + 'px,' + that.y + 'px)' + translateZ;
+		else that.scroller.style.cssText += ';position:absolute;top:' + that.y + 'px;left:' + that.x + 'px';
+
+		if (that.options.useTransition) that.options.fixedScrollbar = true;
+
+		that.refresh();
+
+		that._bind(RESIZE_EV, window);
+		that._bind(START_EV);
+		if (!hasTouch) {
+			if (that.options.wheelAction != 'none') {
+				that._bind('DOMMouseScroll');
+				that._bind('mousewheel');
+			}
+		}
+
+		if (that.options.checkDOMChanges) that.checkDOMTime = setInterval(function () {
+			that._checkDOMChanges();
+		}, 500);
+	};
+
+// Prototype
+iScroll.prototype = {
+	enabled: true,
+	x: 0,
+	y: 0,
+	steps: [],
+	scale: 1,
+	currPageX: 0, currPageY: 0,
+	pagesX: [], pagesY: [],
+	aniTime: null,
+	wheelZoomCount: 0,
+	
+	handleEvent: function (e) {
+		var that = this;
+		switch(e.type) {
+			case START_EV:
+				if (!hasTouch && e.button !== 0) return;
+				that._start(e);
+				break;
+			case MOVE_EV: that._move(e); break;
+			case END_EV:
+			case CANCEL_EV: that._end(e); break;
+			case RESIZE_EV: that._resize(); break;
+			case 'DOMMouseScroll': case 'mousewheel': that._wheel(e); break;
+			case TRNEND_EV: that._transitionEnd(e); break;
+		}
+	},
+	
+	_checkDOMChanges: function () {
+		if (this.moved || this.zoomed || this.animating ||
+			(this.scrollerW == this.scroller.offsetWidth * this.scale && this.scrollerH == this.scroller.offsetHeight * this.scale)) return;
+
+		this.refresh();
+	},
+	
+	_scrollbar: function (dir) {
+		var that = this,
+			bar;
+
+		if (!that[dir + 'Scrollbar']) {
+			if (that[dir + 'ScrollbarWrapper']) {
+				if (hasTransform) that[dir + 'ScrollbarIndicator'].style[transform] = '';
+				that[dir + 'ScrollbarWrapper'].parentNode.removeChild(that[dir + 'ScrollbarWrapper']);
+				that[dir + 'ScrollbarWrapper'] = null;
+				that[dir + 'ScrollbarIndicator'] = null;
+			}
+
+			return;
+		}
+
+		if (!that[dir + 'ScrollbarWrapper']) {
+			// Create the scrollbar wrapper
+			bar = doc.createElement('div');
+
+			if (that.options.scrollbarClass) bar.className = that.options.scrollbarClass + dir.toUpperCase();
+			else bar.style.cssText = 'position:absolute;z-index:100;' + (dir == 'h' ? 'height:7px;bottom:1px;left:2px;right:' + (that.vScrollbar ? '7' : '2') + 'px' : 'width:7px;bottom:' + (that.hScrollbar ? '7' : '2') + 'px;top:2px;right:1px');
+
+			bar.style.cssText += ';pointer-events:none;' + cssVendor + 'transition-property:opacity;' + cssVendor + 'transition-duration:' + (that.options.fadeScrollbar ? '350ms' : '0') + ';overflow:hidden;opacity:' + (that.options.hideScrollbar ? '0' : '1');
+
+			that.wrapper.appendChild(bar);
+			that[dir + 'ScrollbarWrapper'] = bar;
+
+			// Create the scrollbar indicator
+			bar = doc.createElement('div');
+			if (!that.options.scrollbarClass) {
+				bar.style.cssText = 'position:absolute;z-index:100;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.9);' + cssVendor + 'background-clip:padding-box;' + cssVendor + 'box-sizing:border-box;' + (dir == 'h' ? 'height:100%' : 'width:100%') + ';' + cssVendor + 'border-radius:3px;border-radius:3px';
+			}
+			bar.style.cssText += ';pointer-events:none;' + cssVendor + 'transition-property:' + cssVendor + 'transform;' + cssVendor + 'transition-timing-function:cubic-bezier(0.33,0.66,0.66,1);' + cssVendor + 'transition-duration:0;' + cssVendor + 'transform: translate(0,0)' + translateZ;
+			if (that.options.useTransition) bar.style.cssText += ';' + cssVendor + 'transition-timing-function:cubic-bezier(0.33,0.66,0.66,1)';
+
+			that[dir + 'ScrollbarWrapper'].appendChild(bar);
+			that[dir + 'ScrollbarIndicator'] = bar;
+		}
+
+		if (dir == 'h') {
+			that.hScrollbarSize = that.hScrollbarWrapper.clientWidth;
+			that.hScrollbarIndicatorSize = m.max(m.round(that.hScrollbarSize * that.hScrollbarSize / that.scrollerW), 8);
+			that.hScrollbarIndicator.style.width = that.hScrollbarIndicatorSize + 'px';
+			that.hScrollbarMaxScroll = that.hScrollbarSize - that.hScrollbarIndicatorSize;
+			that.hScrollbarProp = that.hScrollbarMaxScroll / that.maxScrollX;
+		} else {
+			that.vScrollbarSize = that.vScrollbarWrapper.clientHeight;
+			that.vScrollbarIndicatorSize = m.max(m.round(that.vScrollbarSize * that.vScrollbarSize / that.scrollerH), 8);
+			that.vScrollbarIndicator.style.height = that.vScrollbarIndicatorSize + 'px';
+			that.vScrollbarMaxScroll = that.vScrollbarSize - that.vScrollbarIndicatorSize;
+			that.vScrollbarProp = that.vScrollbarMaxScroll / that.maxScrollY;
+		}
+
+		// Reset position
+		that._scrollbarPos(dir, true);
+	},
+	
+	_resize: function () {
+		var that = this;
+		setTimeout(function () { that.refresh(); }, isAndroid ? 200 : 0);
+	},
+	
+	_pos: function (x, y) {
+		if (this.zoomed) return;
+
+		x = this.hScroll ? x : 0;
+		y = this.vScroll ? y : 0;
+
+		if (this.options.useTransform) {
+			this.scroller.style[transform] = 'translate(' + x + 'px,' + y + 'px) scale(' + this.scale + ')' + translateZ;
+		} else {
+			x = m.round(x);
+			y = m.round(y);
+			this.scroller.style.left = x + 'px';
+			this.scroller.style.top = y + 'px';
+		}
+
+		this.x = x;
+		this.y = y;
+
+		this._scrollbarPos('h');
+		this._scrollbarPos('v');
+	},
+
+	_scrollbarPos: function (dir, hidden) {
+		var that = this,
+			pos = dir == 'h' ? that.x : that.y,
+			size;
+
+		if (!that[dir + 'Scrollbar']) return;
+
+		pos = that[dir + 'ScrollbarProp'] * pos;
+
+		if (pos < 0) {
+			if (!that.options.fixedScrollbar) {
+				size = that[dir + 'ScrollbarIndicatorSize'] + m.round(pos * 3);
+				if (size < 8) size = 8;
+				that[dir + 'ScrollbarIndicator'].style[dir == 'h' ? 'width' : 'height'] = size + 'px';
+			}
+			pos = 0;
+		} else if (pos > that[dir + 'ScrollbarMaxScroll']) {
+			if (!that.options.fixedScrollbar) {
+				size = that[dir + 'ScrollbarIndicatorSize'] - m.round((pos - that[dir + 'ScrollbarMaxScroll']) * 3);
+				if (size < 8) size = 8;
+				that[dir + 'ScrollbarIndicator'].style[dir == 'h' ? 'width' : 'height'] = size + 'px';
+				pos = that[dir + 'ScrollbarMaxScroll'] + (that[dir + 'ScrollbarIndicatorSize'] - size);
+			} else {
+				pos = that[dir + 'ScrollbarMaxScroll'];
+			}
+		}
+
+		that[dir + 'ScrollbarWrapper'].style[transitionDelay] = '0';
+		that[dir + 'ScrollbarWrapper'].style.opacity = hidden && that.options.hideScrollbar ? '0' : '1';
+		that[dir + 'ScrollbarIndicator'].style[transform] = 'translate(' + (dir == 'h' ? pos + 'px,0)' : '0,' + pos + 'px)') + translateZ;
+	},
+	
+	_start: function (e) {
+		var that = this,
+			point = hasTouch ? e.touches[0] : e,
+			matrix, x, y,
+			c1, c2;
+
+		if (!that.enabled) return;
+
+		if (that.options.onBeforeScrollStart) that.options.onBeforeScrollStart.call(that, e);
+
+		if (that.options.useTransition || that.options.zoom) that._transitionTime(0);
+
+		that.moved = false;
+		that.animating = false;
+		that.zoomed = false;
+		that.distX = 0;
+		that.distY = 0;
+		that.absDistX = 0;
+		that.absDistY = 0;
+		that.dirX = 0;
+		that.dirY = 0;
+
+		// Gesture start
+		if (that.options.zoom && hasTouch && e.touches.length > 1) {
+			c1 = m.abs(e.touches[0].pageX-e.touches[1].pageX);
+			c2 = m.abs(e.touches[0].pageY-e.touches[1].pageY);
+			that.touchesDistStart = m.sqrt(c1 * c1 + c2 * c2);
+
+			that.originX = m.abs(e.touches[0].pageX + e.touches[1].pageX - that.wrapperOffsetLeft * 2) / 2 - that.x;
+			that.originY = m.abs(e.touches[0].pageY + e.touches[1].pageY - that.wrapperOffsetTop * 2) / 2 - that.y;
+
+			if (that.options.onZoomStart) that.options.onZoomStart.call(that, e);
+		}
+
+		if (that.options.momentum) {
+			if (that.options.useTransform) {
+				// Very lame general purpose alternative to CSSMatrix
+				matrix = getComputedStyle(that.scroller, null)[transform].replace(/[^0-9\-.,]/g, '').split(',');
+				x = +(matrix[12] || matrix[4]);
+				y = +(matrix[13] || matrix[5]);
+			} else {
+				x = +getComputedStyle(that.scroller, null).left.replace(/[^0-9-]/g, '');
+				y = +getComputedStyle(that.scroller, null).top.replace(/[^0-9-]/g, '');
+			}
+			
+			if (x != that.x || y != that.y) {
+				if (that.options.useTransition) that._unbind(TRNEND_EV);
+				else cancelFrame(that.aniTime);
+				that.steps = [];
+				that._pos(x, y);
+				if (that.options.onScrollEnd) that.options.onScrollEnd.call(that);
+			}
+		}
+
+		that.absStartX = that.x;	// Needed by snap threshold
+		that.absStartY = that.y;
+
+		that.startX = that.x;
+		that.startY = that.y;
+		that.pointX = point.pageX;
+		that.pointY = point.pageY;
+
+		that.startTime = e.timeStamp || Date.now();
+
+		if (that.options.onScrollStart) that.options.onScrollStart.call(that, e);
+
+		that._bind(MOVE_EV, window);
+		that._bind(END_EV, window);
+		that._bind(CANCEL_EV, window);
+	},
+	
+	_move: function (e) {
+		var that = this,
+			point = hasTouch ? e.touches[0] : e,
+			deltaX = point.pageX - that.pointX,
+			deltaY = point.pageY - that.pointY,
+			newX = that.x + deltaX,
+			newY = that.y + deltaY,
+			c1, c2, scale,
+			timestamp = e.timeStamp || Date.now();
+
+		if (that.options.onBeforeScrollMove) that.options.onBeforeScrollMove.call(that, e);
+
+		// Zoom
+		if (that.options.zoom && hasTouch && e.touches.length > 1) {
+			c1 = m.abs(e.touches[0].pageX - e.touches[1].pageX);
+			c2 = m.abs(e.touches[0].pageY - e.touches[1].pageY);
+			that.touchesDist = m.sqrt(c1*c1+c2*c2);
+
+			that.zoomed = true;
+
+			scale = 1 / that.touchesDistStart * that.touchesDist * this.scale;
+
+			if (scale < that.options.zoomMin) scale = 0.5 * that.options.zoomMin * Math.pow(2.0, scale / that.options.zoomMin);
+			else if (scale > that.options.zoomMax) scale = 2.0 * that.options.zoomMax * Math.pow(0.5, that.options.zoomMax / scale);
+
+			that.lastScale = scale / this.scale;
+
+			newX = this.originX - this.originX * that.lastScale + this.x,
+			newY = this.originY - this.originY * that.lastScale + this.y;
+
+			this.scroller.style[transform] = 'translate(' + newX + 'px,' + newY + 'px) scale(' + scale + ')' + translateZ;
+
+			if (that.options.onZoom) that.options.onZoom.call(that, e);
+			return;
+		}
+
+		that.pointX = point.pageX;
+		that.pointY = point.pageY;
+
+		// Slow down if outside of the boundaries
+		if (newX > 0 || newX < that.maxScrollX) {
+			newX = that.options.bounce ? that.x + (deltaX / 2) : newX >= 0 || that.maxScrollX >= 0 ? 0 : that.maxScrollX;
+		}
+		if (newY > that.minScrollY || newY < that.maxScrollY) {
+			newY = that.options.bounce ? that.y + (deltaY / 2) : newY >= that.minScrollY || that.maxScrollY >= 0 ? that.minScrollY : that.maxScrollY;
+		}
+
+		that.distX += deltaX;
+		that.distY += deltaY;
+		that.absDistX = m.abs(that.distX);
+		that.absDistY = m.abs(that.distY);
+
+		if (that.absDistX < 6 && that.absDistY < 6) {
+			return;
+		}
+
+		// Lock direction
+		if (that.options.lockDirection) {
+			if (that.absDistX > that.absDistY + 5) {
+				newY = that.y;
+				deltaY = 0;
+			} else if (that.absDistY > that.absDistX + 5) {
+				newX = that.x;
+				deltaX = 0;
+			}
+		}
+
+		that.moved = true;
+		that._pos(newX, newY);
+		that.dirX = deltaX > 0 ? -1 : deltaX < 0 ? 1 : 0;
+		that.dirY = deltaY > 0 ? -1 : deltaY < 0 ? 1 : 0;
+
+		if (timestamp - that.startTime > 300) {
+			that.startTime = timestamp;
+			that.startX = that.x;
+			that.startY = that.y;
+		}
+		
+		if (that.options.onScrollMove) that.options.onScrollMove.call(that, e);
+	},
+	
+	_end: function (e) {
+		if (hasTouch && e.touches.length !== 0) return;
+
+		var that = this,
+			point = hasTouch ? e.changedTouches[0] : e,
+			target, ev,
+			momentumX = { dist:0, time:0 },
+			momentumY = { dist:0, time:0 },
+			duration = (e.timeStamp || Date.now()) - that.startTime,
+			newPosX = that.x,
+			newPosY = that.y,
+			distX, distY,
+			newDuration,
+			snap,
+			scale;
+
+		that._unbind(MOVE_EV, window);
+		that._unbind(END_EV, window);
+		that._unbind(CANCEL_EV, window);
+
+		if (that.options.onBeforeScrollEnd) that.options.onBeforeScrollEnd.call(that, e);
+
+		if (that.zoomed) {
+			scale = that.scale * that.lastScale;
+			scale = Math.max(that.options.zoomMin, scale);
+			scale = Math.min(that.options.zoomMax, scale);
+			that.lastScale = scale / that.scale;
+			that.scale = scale;
+
+			that.x = that.originX - that.originX * that.lastScale + that.x;
+			that.y = that.originY - that.originY * that.lastScale + that.y;
+			
+			that.scroller.style[transitionDuration] = '200ms';
+			that.scroller.style[transform] = 'translate(' + that.x + 'px,' + that.y + 'px) scale(' + that.scale + ')' + translateZ;
+			
+			that.zoomed = false;
+			that.refresh();
+
+			if (that.options.onZoomEnd) that.options.onZoomEnd.call(that, e);
+			return;
+		}
+
+		if (!that.moved) {
+			if (hasTouch) {
+				if (that.doubleTapTimer && that.options.zoom) {
+					// Double tapped
+					clearTimeout(that.doubleTapTimer);
+					that.doubleTapTimer = null;
+					if (that.options.onZoomStart) that.options.onZoomStart.call(that, e);
+					that.zoom(that.pointX, that.pointY, that.scale == 1 ? that.options.doubleTapZoom : 1);
+					if (that.options.onZoomEnd) {
+						setTimeout(function() {
+							that.options.onZoomEnd.call(that, e);
+						}, 200); // 200 is default zoom duration
+					}
+				} else if (this.options.handleClick) {
+					that.doubleTapTimer = setTimeout(function () {
+						that.doubleTapTimer = null;
+
+						// Find the last touched element
+						target = point.target;
+						while (target.nodeType != 1) target = target.parentNode;
+
+						if (target.tagName != 'SELECT' && target.tagName != 'INPUT' && target.tagName != 'TEXTAREA') {
+							ev = doc.createEvent('MouseEvents');
+							ev.initMouseEvent('click', true, true, e.view, 1,
+								point.screenX, point.screenY, point.clientX, point.clientY,
+								e.ctrlKey, e.altKey, e.shiftKey, e.metaKey,
+								0, null);
+							ev._fake = true;
+							target.dispatchEvent(ev);
+						}
+					}, that.options.zoom ? 250 : 0);
+				}
+			}
+
+			that._resetPos(400);
+
+			if (that.options.onTouchEnd) that.options.onTouchEnd.call(that, e);
+			return;
+		}
+
+		if (duration < 300 && that.options.momentum) {
+			momentumX = newPosX ? that._momentum(newPosX - that.startX, duration, -that.x, that.scrollerW - that.wrapperW + that.x, that.options.bounce ? that.wrapperW : 0) : momentumX;
+			momentumY = newPosY ? that._momentum(newPosY - that.startY, duration, -that.y, (that.maxScrollY < 0 ? that.scrollerH - that.wrapperH + that.y - that.minScrollY : 0), that.options.bounce ? that.wrapperH : 0) : momentumY;
+
+			newPosX = that.x + momentumX.dist;
+			newPosY = that.y + momentumY.dist;
+
+			if ((that.x > 0 && newPosX > 0) || (that.x < that.maxScrollX && newPosX < that.maxScrollX)) momentumX = { dist:0, time:0 };
+			if ((that.y > that.minScrollY && newPosY > that.minScrollY) || (that.y < that.maxScrollY && newPosY < that.maxScrollY)) momentumY = { dist:0, time:0 };
+		}
+
+		if (momentumX.dist || momentumY.dist) {
+			newDuration = m.max(m.max(momentumX.time, momentumY.time), 10);
+
+			// Do we need to snap?
+			if (that.options.snap) {
+				distX = newPosX - that.absStartX;
+				distY = newPosY - that.absStartY;
+				if (m.abs(distX) < that.options.snapThreshold && m.abs(distY) < that.options.snapThreshold) { that.scrollTo(that.absStartX, that.absStartY, 200); }
+				else {
+					snap = that._snap(newPosX, newPosY);
+					newPosX = snap.x;
+					newPosY = snap.y;
+					newDuration = m.max(snap.time, newDuration);
+				}
+			}
+
+			that.scrollTo(m.round(newPosX), m.round(newPosY), newDuration);
+
+			if (that.options.onTouchEnd) that.options.onTouchEnd.call(that, e);
+			return;
+		}
+
+		// Do we need to snap?
+		if (that.options.snap) {
+			distX = newPosX - that.absStartX;
+			distY = newPosY - that.absStartY;
+			if (m.abs(distX) < that.options.snapThreshold && m.abs(distY) < that.options.snapThreshold) that.scrollTo(that.absStartX, that.absStartY, 200);
+			else {
+				snap = that._snap(that.x, that.y);
+				if (snap.x != that.x || snap.y != that.y) that.scrollTo(snap.x, snap.y, snap.time);
+			}
+
+			if (that.options.onTouchEnd) that.options.onTouchEnd.call(that, e);
+			return;
+		}
+
+		that._resetPos(200);
+		if (that.options.onTouchEnd) that.options.onTouchEnd.call(that, e);
+	},
+	
+	_resetPos: function (time) {
+		var that = this,
+			resetX = that.x >= 0 ? 0 : that.x < that.maxScrollX ? that.maxScrollX : that.x,
+			resetY = that.y >= that.minScrollY || that.maxScrollY > 0 ? that.minScrollY : that.y < that.maxScrollY ? that.maxScrollY : that.y;
+
+		if (resetX == that.x && resetY == that.y) {
+			if (that.moved) {
+				that.moved = false;
+				if (that.options.onScrollEnd) that.options.onScrollEnd.call(that);		// Execute custom code on scroll end
+			}
+
+			if (that.hScrollbar && that.options.hideScrollbar) {
+				if (vendor == 'webkit') that.hScrollbarWrapper.style[transitionDelay] = '300ms';
+				that.hScrollbarWrapper.style.opacity = '0';
+			}
+			if (that.vScrollbar && that.options.hideScrollbar) {
+				if (vendor == 'webkit') that.vScrollbarWrapper.style[transitionDelay] = '300ms';
+				that.vScrollbarWrapper.style.opacity = '0';
+			}
+
+			return;
+		}
+
+		that.scrollTo(resetX, resetY, time || 0);
+	},
+
+	_wheel: function (e) {
+		var that = this,
+			wheelDeltaX, wheelDeltaY,
+			deltaX, deltaY,
+			deltaScale;
+
+		if ('wheelDeltaX' in e) {
+			wheelDeltaX = e.wheelDeltaX / 12;
+			wheelDeltaY = e.wheelDeltaY / 12;
+		} else if('wheelDelta' in e) {
+			wheelDeltaX = wheelDeltaY = e.wheelDelta / 12;
+		} else if ('detail' in e) {
+			wheelDeltaX = wheelDeltaY = -e.detail * 3;
+		} else {
+			return;
+		}
+		
+		if (that.options.wheelAction == 'zoom') {
+			deltaScale = that.scale * Math.pow(2, 1/3 * (wheelDeltaY ? wheelDeltaY / Math.abs(wheelDeltaY) : 0));
+			if (deltaScale < that.options.zoomMin) deltaScale = that.options.zoomMin;
+			if (deltaScale > that.options.zoomMax) deltaScale = that.options.zoomMax;
+			
+			if (deltaScale != that.scale) {
+				if (!that.wheelZoomCount && that.options.onZoomStart) that.options.onZoomStart.call(that, e);
+				that.wheelZoomCount++;
+				
+				that.zoom(e.pageX, e.pageY, deltaScale, 400);
+				
+				setTimeout(function() {
+					that.wheelZoomCount--;
+					if (!that.wheelZoomCount && that.options.onZoomEnd) that.options.onZoomEnd.call(that, e);
+				}, 400);
+			}
+			
+			return;
+		}
+		
+		deltaX = that.x + wheelDeltaX;
+		deltaY = that.y + wheelDeltaY;
+
+		if (deltaX > 0) deltaX = 0;
+		else if (deltaX < that.maxScrollX) deltaX = that.maxScrollX;
+
+		if (deltaY > that.minScrollY) deltaY = that.minScrollY;
+		else if (deltaY < that.maxScrollY) deltaY = that.maxScrollY;
+    
+		if (that.maxScrollY < 0) {
+			that.scrollTo(deltaX, deltaY, 0);
+		}
+	},
+	
+	_transitionEnd: function (e) {
+		var that = this;
+
+		if (e.target != that.scroller) return;
+
+		that._unbind(TRNEND_EV);
+		
+		that._startAni();
+	},
+
+
+	/**
+	*
+	* Utilities
+	*
+	*/
+	_startAni: function () {
+		var that = this,
+			startX = that.x, startY = that.y,
+			startTime = Date.now(),
+			step, easeOut,
+			animate;
+
+		if (that.animating) return;
+		
+		if (!that.steps.length) {
+			that._resetPos(400);
+			return;
+		}
+		
+		step = that.steps.shift();
+		
+		if (step.x == startX && step.y == startY) step.time = 0;
+
+		that.animating = true;
+		that.moved = true;
+		
+		if (that.options.useTransition) {
+			that._transitionTime(step.time);
+			that._pos(step.x, step.y);
+			that.animating = false;
+			if (step.time) that._bind(TRNEND_EV);
+			else that._resetPos(0);
+			return;
+		}
+
+		animate = function () {
+			var now = Date.now(),
+				newX, newY;
+
+			if (now >= startTime + step.time) {
+				that._pos(step.x, step.y);
+				that.animating = false;
+				if (that.options.onAnimationEnd) that.options.onAnimationEnd.call(that);			// Execute custom code on animation end
+				that._startAni();
+				return;
+			}
+
+			now = (now - startTime) / step.time - 1;
+			easeOut = m.sqrt(1 - now * now);
+			newX = (step.x - startX) * easeOut + startX;
+			newY = (step.y - startY) * easeOut + startY;
+			that._pos(newX, newY);
+			if (that.animating) that.aniTime = nextFrame(animate);
+		};
+
+		animate();
+	},
+
+	_transitionTime: function (time) {
+		time += 'ms';
+		this.scroller.style[transitionDuration] = time;
+		if (this.hScrollbar) this.hScrollbarIndicator.style[transitionDuration] = time;
+		if (this.vScrollbar) this.vScrollbarIndicator.style[transitionDuration] = time;
+	},
+
+	_momentum: function (dist, time, maxDistUpper, maxDistLower, size) {
+		var deceleration = 0.0006,
+			speed = m.abs(dist) / time,
+			newDist = (speed * speed) / (2 * deceleration),
+			newTime = 0, outsideDist = 0;
+
+		// Proportinally reduce speed if we are outside of the boundaries
+		if (dist > 0 && newDist > maxDistUpper) {
+			outsideDist = size / (6 / (newDist / speed * deceleration));
+			maxDistUpper = maxDistUpper + outsideDist;
+			speed = speed * maxDistUpper / newDist;
+			newDist = maxDistUpper;
+		} else if (dist < 0 && newDist > maxDistLower) {
+			outsideDist = size / (6 / (newDist / speed * deceleration));
+			maxDistLower = maxDistLower + outsideDist;
+			speed = speed * maxDistLower / newDist;
+			newDist = maxDistLower;
+		}
+
+		newDist = newDist * (dist < 0 ? -1 : 1);
+		newTime = speed / deceleration;
+
+		return { dist: newDist, time: m.round(newTime) };
+	},
+
+	_offset: function (el) {
+		var left = -el.offsetLeft,
+			top = -el.offsetTop;
+			
+		while (el = el.offsetParent) {
+			left -= el.offsetLeft;
+			top -= el.offsetTop;
+		}
+		
+		if (el != this.wrapper) {
+			left *= this.scale;
+			top *= this.scale;
+		}
+
+		return { left: left, top: top };
+	},
+
+	_snap: function (x, y) {
+		var that = this,
+			i, l,
+			page, time,
+			sizeX, sizeY;
+
+		// Check page X
+		page = that.pagesX.length - 1;
+		for (i=0, l=that.pagesX.length; i<l; i++) {
+			if (x >= that.pagesX[i]) {
+				page = i;
+				break;
+			}
+		}
+		if (page == that.currPageX && page > 0 && that.dirX < 0) page--;
+		x = that.pagesX[page];
+		sizeX = m.abs(x - that.pagesX[that.currPageX]);
+		sizeX = sizeX ? m.abs(that.x - x) / sizeX * 500 : 0;
+		that.currPageX = page;
+
+		// Check page Y
+		page = that.pagesY.length-1;
+		for (i=0; i<page; i++) {
+			if (y >= that.pagesY[i]) {
+				page = i;
+				break;
+			}
+		}
+		if (page == that.currPageY && page > 0 && that.dirY < 0) page--;
+		y = that.pagesY[page];
+		sizeY = m.abs(y - that.pagesY[that.currPageY]);
+		sizeY = sizeY ? m.abs(that.y - y) / sizeY * 500 : 0;
+		that.currPageY = page;
+
+		// Snap with constant speed (proportional duration)
+		time = m.round(m.max(sizeX, sizeY)) || 200;
+
+		return { x: x, y: y, time: time };
+	},
+
+	_bind: function (type, el, bubble) {
+		(el || this.scroller).addEventListener(type, this, !!bubble);
+	},
+
+	_unbind: function (type, el, bubble) {
+		(el || this.scroller).removeEventListener(type, this, !!bubble);
+	},
+
+
+	/**
+	*
+	* Public methods
+	*
+	*/
+	destroy: function () {
+		var that = this;
+
+		that.scroller.style[transform] = '';
+
+		// Remove the scrollbars
+		that.hScrollbar = false;
+		that.vScrollbar = false;
+		that._scrollbar('h');
+		that._scrollbar('v');
+
+		// Remove the event listeners
+		that._unbind(RESIZE_EV, window);
+		that._unbind(START_EV);
+		that._unbind(MOVE_EV, window);
+		that._unbind(END_EV, window);
+		that._unbind(CANCEL_EV, window);
+		
+		if (!that.options.hasTouch) {
+			that._unbind('DOMMouseScroll');
+			that._unbind('mousewheel');
+		}
+		
+		if (that.options.useTransition) that._unbind(TRNEND_EV);
+		
+		if (that.options.checkDOMChanges) clearInterval(that.checkDOMTime);
+		
+		if (that.options.onDestroy) that.options.onDestroy.call(that);
+	},
+
+	refresh: function () {
+		var that = this,
+			offset,
+			i, l,
+			els,
+			pos = 0,
+			page = 0;
+
+		if (that.scale < that.options.zoomMin) that.scale = that.options.zoomMin;
+		that.wrapperW = that.wrapper.clientWidth || 1;
+		that.wrapperH = that.wrapper.clientHeight || 1;
+
+		that.minScrollY = -that.options.topOffset || 0;
+		that.scrollerW = m.round(that.scroller.offsetWidth * that.scale);
+		that.scrollerH = m.round((that.scroller.offsetHeight + that.minScrollY) * that.scale);
+		that.maxScrollX = that.wrapperW - that.scrollerW;
+		that.maxScrollY = that.wrapperH - that.scrollerH + that.minScrollY;
+		that.dirX = 0;
+		that.dirY = 0;
+
+		if (that.options.onRefresh) that.options.onRefresh.call(that);
+
+		that.hScroll = that.options.hScroll && that.maxScrollX < 0;
+		that.vScroll = that.options.vScroll && (!that.options.bounceLock && !that.hScroll || that.scrollerH > that.wrapperH);
+
+		that.hScrollbar = that.hScroll && that.options.hScrollbar;
+		that.vScrollbar = that.vScroll && that.options.vScrollbar && that.scrollerH > that.wrapperH;
+
+		offset = that._offset(that.wrapper);
+		that.wrapperOffsetLeft = -offset.left;
+		that.wrapperOffsetTop = -offset.top;
+
+		// Prepare snap
+		if (typeof that.options.snap == 'string') {
+			that.pagesX = [];
+			that.pagesY = [];
+			els = that.scroller.querySelectorAll(that.options.snap);
+			for (i=0, l=els.length; i<l; i++) {
+				pos = that._offset(els[i]);
+				pos.left += that.wrapperOffsetLeft;
+				pos.top += that.wrapperOffsetTop;
+				that.pagesX[i] = pos.left < that.maxScrollX ? that.maxScrollX : pos.left * that.scale;
+				that.pagesY[i] = pos.top < that.maxScrollY ? that.maxScrollY : pos.top * that.scale;
+			}
+		} else if (that.options.snap) {
+			that.pagesX = [];
+			while (pos >= that.maxScrollX) {
+				that.pagesX[page] = pos;
+				pos = pos - that.wrapperW;
+				page++;
+			}
+			if (that.maxScrollX%that.wrapperW) that.pagesX[that.pagesX.length] = that.maxScrollX - that.pagesX[that.pagesX.length-1] + that.pagesX[that.pagesX.length-1];
+
+			pos = 0;
+			page = 0;
+			that.pagesY = [];
+			while (pos >= that.maxScrollY) {
+				that.pagesY[page] = pos;
+				pos = pos - that.wrapperH;
+				page++;
+			}
+			if (that.maxScrollY%that.wrapperH) that.pagesY[that.pagesY.length] = that.maxScrollY - that.pagesY[that.pagesY.length-1] + that.pagesY[that.pagesY.length-1];
+		}
+
+		// Prepare the scrollbars
+		that._scrollbar('h');
+		that._scrollbar('v');
+
+		if (!that.zoomed) {
+			that.scroller.style[transitionDuration] = '0';
+			that._resetPos(400);
+		}
+	},
+
+	scrollTo: function (x, y, time, relative) {
+		var that = this,
+			step = x,
+			i, l;
+
+		that.stop();
+
+		if (!step.length) step = [{ x: x, y: y, time: time, relative: relative }];
+		
+		for (i=0, l=step.length; i<l; i++) {
+			if (step[i].relative) { step[i].x = that.x - step[i].x; step[i].y = that.y - step[i].y; }
+			that.steps.push({ x: step[i].x, y: step[i].y, time: step[i].time || 0 });
+		}
+
+		that._startAni();
+	},
+
+	scrollToElement: function (el, time) {
+		var that = this, pos;
+		el = el.nodeType ? el : that.scroller.querySelector(el);
+		if (!el) return;
+
+		pos = that._offset(el);
+		pos.left += that.wrapperOffsetLeft;
+		pos.top += that.wrapperOffsetTop;
+
+		pos.left = pos.left > 0 ? 0 : pos.left < that.maxScrollX ? that.maxScrollX : pos.left;
+		pos.top = pos.top > that.minScrollY ? that.minScrollY : pos.top < that.maxScrollY ? that.maxScrollY : pos.top;
+		time = time === undefined ? m.max(m.abs(pos.left)*2, m.abs(pos.top)*2) : time;
+
+		that.scrollTo(pos.left, pos.top, time);
+	},
+
+	scrollToPage: function (pageX, pageY, time) {
+		var that = this, x, y;
+		
+		time = time === undefined ? 400 : time;
+
+		if (that.options.onScrollStart) that.options.onScrollStart.call(that);
+
+		if (that.options.snap) {
+			pageX = pageX == 'next' ? that.currPageX+1 : pageX == 'prev' ? that.currPageX-1 : pageX;
+			pageY = pageY == 'next' ? that.currPageY+1 : pageY == 'prev' ? that.currPageY-1 : pageY;
+
+			pageX = pageX < 0 ? 0 : pageX > that.pagesX.length-1 ? that.pagesX.length-1 : pageX;
+			pageY = pageY < 0 ? 0 : pageY > that.pagesY.length-1 ? that.pagesY.length-1 : pageY;
+
+			that.currPageX = pageX;
+			that.currPageY = pageY;
+			x = that.pagesX[pageX];
+			y = that.pagesY[pageY];
+		} else {
+			x = -that.wrapperW * pageX;
+			y = -that.wrapperH * pageY;
+			if (x < that.maxScrollX) x = that.maxScrollX;
+			if (y < that.maxScrollY) y = that.maxScrollY;
+		}
+
+		that.scrollTo(x, y, time);
+	},
+
+	disable: function () {
+		this.stop();
+		this._resetPos(0);
+		this.enabled = false;
+
+		// If disabled after touchstart we make sure that there are no left over events
+		this._unbind(MOVE_EV, window);
+		this._unbind(END_EV, window);
+		this._unbind(CANCEL_EV, window);
+	},
+	
+	enable: function () {
+		this.enabled = true;
+	},
+	
+	stop: function () {
+		if (this.options.useTransition) this._unbind(TRNEND_EV);
+		else cancelFrame(this.aniTime);
+		this.steps = [];
+		this.moved = false;
+		this.animating = false;
+	},
+	
+	zoom: function (x, y, scale, time) {
+		var that = this,
+			relScale = scale / that.scale;
+
+		if (!that.options.useTransform) return;
+
+		that.zoomed = true;
+		time = time === undefined ? 200 : time;
+		x = x - that.wrapperOffsetLeft - that.x;
+		y = y - that.wrapperOffsetTop - that.y;
+		that.x = x - x * relScale + that.x;
+		that.y = y - y * relScale + that.y;
+
+		that.scale = scale;
+		that.refresh();
+
+		that.x = that.x > 0 ? 0 : that.x < that.maxScrollX ? that.maxScrollX : that.x;
+		that.y = that.y > that.minScrollY ? that.minScrollY : that.y < that.maxScrollY ? that.maxScrollY : that.y;
+
+		that.scroller.style[transitionDuration] = time + 'ms';
+		that.scroller.style[transform] = 'translate(' + that.x + 'px,' + that.y + 'px) scale(' + scale + ')' + translateZ;
+		that.zoomed = false;
+	},
+	
+	isReady: function () {
+		return !this.moved && !this.zoomed && !this.animating;
+	}
+};
+
+function prefixStyle (style) {
+	if ( vendor === '' ) return style;
+
+	style = style.charAt(0).toUpperCase() + style.substr(1);
+	return vendor + style;
+}
+
+dummyStyle = null;	// for the sake of it
+
+if (typeof exports !== 'undefined') exports.iScroll = iScroll;
+else window.iScroll = iScroll;
+
+})(window, document);
+
 /**
- * @license AngularJS v1.2.13
+ * @license AngularJS v1.2.7-build.2025+sha.d1c4766
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -68,7 +1173,7 @@ function minErr(module) {
       return match;
     });
 
-    message = message + '\nhttp://errors.angularjs.org/1.2.13/' +
+    message = message + '\nhttp://errors.angularjs.org/1.2.7-build.2025+sha.d1c4766/' +
       (module ? module + '/' : '') + code;
     for (i = 2; i < arguments.length; i++) {
       message = message + (i == 2 ? '?' : '&') + 'p' + (i-2) + '=' +
@@ -160,7 +1265,6 @@ function minErr(module) {
     -assertNotHasOwnProperty,
     -getter,
     -getBlockElements,
-    -hasOwnProperty,
 
 */
 
@@ -176,7 +1280,7 @@ function minErr(module) {
  * @returns {string} Lowercased string.
  */
 var lowercase = function(string){return isString(string) ? string.toLowerCase() : string;};
-var hasOwnProperty = Object.prototype.hasOwnProperty;
+
 
 /**
  * @ngdoc function
@@ -272,8 +1376,7 @@ function isArrayLike(obj) {
  * is the value of an object property or an array element and `key` is the object property key or
  * array element index. Specifying a `context` for the function is optional.
  *
- * It is worth noting that `.forEach` does not iterate over inherited properties because it filters
- * using the `hasOwnProperty` method.
+ * Note: this function was previously known as `angular.foreach`.
  *
    <pre>
      var values = {name: 'misko', gender: 'male'};
@@ -281,7 +1384,7 @@ function isArrayLike(obj) {
      angular.forEach(values, function(value, key){
        this.push(key + ': ' + value);
      }, log);
-     expect(log).toEqual(['name: misko', 'gender: male']);
+     expect(log).toEqual(['name: misko', 'gender:male']);
    </pre>
  *
  * @param {Object|Array} obj Object to iterate over.
@@ -852,7 +1955,7 @@ function shallowCopy(src, dst) {
   for(var key in src) {
     // shallowCopy is only ever called by $compile nodeLinkFn, which has control over src
     // so we don't need to worry about using our custom hasOwnProperty here
-    if (src.hasOwnProperty(key) && !(key.charAt(0) === '$' && key.charAt(1) === '$')) {
+    if (src.hasOwnProperty(key) && key.charAt(0) !== '$' && key.charAt(1) !== '$') {
       dst[key] = src[key];
     }
   }
@@ -1040,9 +2143,7 @@ function fromJson(json) {
 
 
 function toBoolean(value) {
-  if (typeof value === 'function') {
-    value = true;
-  } else if (value && value.length !== 0) {
+  if (value && value.length !== 0) {
     var v = lowercase("" + value);
     value = !(v == 'f' || v == '0' || v == 'false' || v == 'no' || v == 'n' || v == '[]');
   } else {
@@ -1211,7 +2312,6 @@ function encodeUriQuery(val, pctEncodeSpaces) {
    <file name="index.html">
    <div ng-controller="ngAppDemoController">
      I can add: {{a}} + {{b}} =  {{ a+b }}
-   </div>
    </file>
    <file name="script.js">
    angular.module('ngAppDemo', []).controller('ngAppDemoController', function($scope) {
@@ -1836,11 +2936,11 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.13',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.7-build.2025+sha.d1c4766',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
-  dot: 13,
-  codeName: 'romantic-transclusion'
+  dot: 7,
+  codeName: 'emoji-clairvoyance'
 };
 
 
@@ -2002,7 +3102,7 @@ function publishExternalAPI(angular){
  * - [`after()`](http://api.jquery.com/after/)
  * - [`append()`](http://api.jquery.com/append/)
  * - [`attr()`](http://api.jquery.com/attr/)
- * - [`bind()`](http://api.jquery.com/bind/) - Does not support namespaces, selectors or eventData
+ * - [`bind()`](http://api.jquery.com/on/) - Does not support namespaces, selectors or eventData
  * - [`children()`](http://api.jquery.com/children/) - Does not support selectors
  * - [`clone()`](http://api.jquery.com/clone/)
  * - [`contents()`](http://api.jquery.com/contents/)
@@ -2029,7 +3129,7 @@ function publishExternalAPI(angular){
  * - [`text()`](http://api.jquery.com/text/)
  * - [`toggleClass()`](http://api.jquery.com/toggleClass/)
  * - [`triggerHandler()`](http://api.jquery.com/triggerHandler/) - Passes a dummy event object to handlers.
- * - [`unbind()`](http://api.jquery.com/unbind/) - Does not support namespaces
+ * - [`unbind()`](http://api.jquery.com/off/) - Does not support namespaces
  * - [`val()`](http://api.jquery.com/val/)
  * - [`wrap()`](http://api.jquery.com/wrap/)
  *
@@ -2068,14 +3168,6 @@ var jqCache = JQLite.cache = {},
     removeEventListenerFn = (window.document.removeEventListener
       ? function(element, type, fn) {element.removeEventListener(type, fn, false); }
       : function(element, type, fn) {element.detachEvent('on' + type, fn); });
-
-/*
- * !!! This is an undocumented "private" function !!!
- */
-var jqData = JQLite._data = function(node) {
-  //jQuery always returns an object on cache miss
-  return this.cache[node[this.expando]] || {};
-};
 
 function jqNextId() { return ++jqId; }
 
@@ -2144,9 +3236,6 @@ function jqLitePatchJQueryRemove(name, dispatchThis, filterElems, getterIfNoArgu
 function JQLite(element) {
   if (element instanceof JQLite) {
     return element;
-  }
-  if (isString(element)) {
-    element = trim(element);
   }
   if (!(this instanceof JQLite)) {
     if (isString(element) && element.charAt(0) != '<') {
@@ -3293,9 +4382,11 @@ function annotate(fn) {
  * @param {(Object|function())} provider If the provider is:
  *
  *   - `Object`: then it should have a `$get` method. The `$get` method will be invoked using
- *     {@link AUTO.$injector#invoke $injector.invoke()} when an instance needs to be created.
- *   - `Constructor`: a new instance of the provider will be created using                     
- *     {@link AUTO.$injector#instantiate $injector.instantiate()}, then treated as `object`.
+ *               {@link AUTO.$injector#invoke $injector.invoke()} when an instance needs to be
+ *               created.
+ *   - `Constructor`: a new instance of the provider will be created using
+ *               {@link AUTO.$injector#instantiate $injector.instantiate()}, then treated as
+ *               `object`.
  *
  * @returns {Object} registered provider instance
 
@@ -3411,7 +4502,7 @@ function annotate(fn) {
  * constructor function that will be used to instantiate the service instance.
  *
  * You should use {@link AUTO.$provide#methods_service $provide.service(class)} if you define your service
- * as a type/class.
+ * as a type/class. This is common when using {@link http://coffeescript.org CoffeeScript}.
  *
  * @param {string} name The name of the instance.
  * @param {Function} constructor A class (constructor function) that will be instantiated.
@@ -3419,24 +4510,20 @@ function annotate(fn) {
  *
  * @example
  * Here is an example of registering a service using
- * {@link AUTO.$provide#methods_service $provide.service(class)}.
+ * {@link AUTO.$provide#methods_service $provide.service(class)} that is defined as a CoffeeScript class.
  * <pre>
- *   var Ping = function($http) {
- *     this.$http = $http;
- *   };
- * 
- *   Ping.$inject = ['$http'];
- *   
- *   Ping.prototype.send = function() {
- *     return this.$http.get('/ping');
- *   };
- *   $provide.service('ping', Ping);
+ *   class Ping
+ *     constructor: (@$http) ->
+ *     send: () =>
+ *       @$http.get('/ping')
+ *
+ *   $provide.service('ping', ['$http', Ping])
  * </pre>
  * You would then inject and use this service like this:
  * <pre>
- *   someModule.controller('Ctrl', ['ping', function(ping) {
- *     ping.send();
- *   }]);
+ *   someModule.controller 'Ctrl', ['ping', (ping) ->
+ *     ping.send()
+ *   ]
  * </pre>
  */
 
@@ -3528,7 +4615,7 @@ function annotate(fn) {
  * Here we decorate the {@link ng.$log $log} service to convert warnings to errors by intercepting
  * calls to {@link ng.$log#error $log.warn()}.
  * <pre>
- *   $provide.decorator('$log', ['$delegate', function($delegate) {
+ *   $provider.decorator('$log', ['$delegate', function($delegate) {
  *     $delegate.warn = $delegate.error;
  *     return $delegate;
  *   }]);
@@ -3681,11 +4768,6 @@ function createInjector(modulesToLoad) {
           path.unshift(serviceName);
           cache[serviceName] = INSTANTIATING;
           return cache[serviceName] = factory(serviceName);
-        } catch (err) {
-          if (cache[serviceName] === INSTANTIATING) {
-            delete cache[serviceName];
-          }
-          throw err;
         } finally {
           path.shift();
         }
@@ -4067,29 +5149,6 @@ var $AnimateProvider = ['$provide', function($provide) {
         done && $timeout(done, 0, false);
       },
 
-      /**
-       *
-       * @ngdoc function
-       * @name ng.$animate#setClass
-       * @methodOf ng.$animate
-       * @function
-       * @description Adds and/or removes the given CSS classes to and from the element.
-       * Once complete, the done() callback will be fired (if provided).
-       * @param {jQuery/jqLite element} element the element which will it's CSS classes changed
-       *   removed from it
-       * @param {string} add the CSS classes which will be added to the element
-       * @param {string} remove the CSS class which will be removed from the element
-       * @param {function=} done the callback function (if provided) that will be fired after the
-       *   CSS classes have been set on the element
-       */
-      setClass : function(element, add, remove, done) {
-        forEach(element, function (element) {
-          jqLiteAddClass(element, add);
-          jqLiteRemoveClass(element, remove);
-        });
-        done && $timeout(done, 0, false);
-      },
-
       enabled : noop
     };
   }];
@@ -4243,9 +5302,8 @@ function Browser(window, document, $log, $sniffer) {
    * @param {boolean=} replace Should new url replace current history record ?
    */
   self.url = function(url, replace) {
-    // Android Browser BFCache causes location, history reference to become stale.
+    // Android Browser BFCache causes location reference to become stale.
     if (location !== window.location) location = window.location;
-    if (history !== window.history) history = window.history;
 
     // setter
     if (url) {
@@ -4297,7 +5355,7 @@ function Browser(window, document, $log, $sniffer) {
    * @description
    * Register callback function that will be called, when url changes.
    *
-   * It's only called when the url is changed from outside of angular:
+   * It's only called when the url is changed by outside of angular:
    * - user types different url into address bar
    * - user clicks on history (forward/back) button
    * - user clicks on a link
@@ -4339,7 +5397,7 @@ function Browser(window, document, $log, $sniffer) {
   /**
    * @name ng.$browser#baseHref
    * @methodOf ng.$browser
-   *
+   * 
    * @description
    * Returns current <base href>
    * (always relative - without domain)
@@ -4348,7 +5406,7 @@ function Browser(window, document, $log, $sniffer) {
    */
   self.baseHref = function() {
     var href = baseElement.attr('href');
-    return href ? href.replace(/^(https?\:)?\/\/[^\/]*/, '') : '';
+    return href ? href.replace(/^https?\:\/\/[^\/]*/, '') : '';
   };
 
   //////////////////////////////////////////////////////////////
@@ -4370,13 +5428,13 @@ function Browser(window, document, $log, $sniffer) {
    * It is not meant to be used directly, use the $cookie service instead.
    *
    * The return values vary depending on the arguments that the method was called with as follows:
-   *
+   * 
    * - cookies() -> hash of all cookies, this is NOT a copy of the internal state, so do not modify
    *   it
    * - cookies(name, value) -> set name to value, if value is undefined delete the cookie
    * - cookies(name) -> the same as (name, undefined) == DELETES (no one calls it right now that
    *   way)
-   *
+   * 
    * @returns {Object} Hash of all cookies (if called without any parameter)
    */
   self.cookies = function(name, value) {
@@ -4754,7 +5812,7 @@ function $TemplateCacheProvider() {
  * @function
  *
  * @description
- * Compiles an HTML string or DOM into a template and produces a template function, which
+ * Compiles a piece of HTML string or DOM into a template and produces a template function, which
  * can then be used to link {@link ng.$rootScope.Scope `scope`} and the template together.
  *
  * The compilation is a process of walking the DOM tree and matching DOM elements to
@@ -5154,17 +6212,13 @@ function $TemplateCacheProvider() {
       <div compile="html"></div>
     </div>
    </doc:source>
-   <doc:protractor>
+   <doc:scenario>
      it('should auto compile', function() {
-       var textarea = $('textarea');
-       var output = $('div[compile]');
-       // The initial state reads 'Hello Angular'.
-       expect(output.getText()).toBe('Hello Angular');
-       textarea.clear();
-       textarea.sendKeys('{{name}}!');
-       expect(output.getText()).toBe('Angular!');
+       expect(element('div[compile]').text()).toBe('Hello Angular');
+       input('html').enter('{{name}}!');
+       expect(element('div[compile]').text()).toBe('Angular!');
      });
-   </doc:protractor>
+   </doc:scenario>
  </doc:example>
 
  *
@@ -5232,8 +6286,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
   var hasDirectives = {},
       Suffix = 'Directive',
       COMMENT_DIRECTIVE_REGEXP = /^\s*directive\:\s*([\d\w\-_]+)\s+(.*)$/,
-      CLASS_DIRECTIVE_REGEXP = /(([\d\w\-_]+)(?:\:([^;]+))?;?)/,
-      TABLE_CONTENT_REGEXP = /^<\s*(tr|th|td|tbody)(\s+[^>]*)?>/i;
+      CLASS_DIRECTIVE_REGEXP = /(([\d\w\-_]+)(?:\:([^;]+))?;?)/;
 
   // Ref: http://developers.whatwg.org/webappapis.html#event-handler-idl-attributes
   // The assumption is that future DOM event attribute names will begin with
@@ -5420,16 +6473,8 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
        * @param {string} oldClasses The former CSS className value
        */
       $updateClass : function(newClasses, oldClasses) {
-        var toAdd = tokenDifference(newClasses, oldClasses);
-        var toRemove = tokenDifference(oldClasses, newClasses);
-
-        if(toAdd.length === 0) {
-          $animate.removeClass(this.$$element, toRemove);
-        } else if(toRemove.length === 0) {
-          $animate.addClass(this.$$element, toAdd);
-        } else {
-          $animate.setClass(this.$$element, toAdd, toRemove);
-        }
+        this.$removeClass(tokenDifference(oldClasses, newClasses));
+        this.$addClass(tokenDifference(newClasses, oldClasses));
       },
 
       /**
@@ -5881,7 +6926,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           templateDirective = previousCompileContext.templateDirective,
           nonTlbTranscludeDirective = previousCompileContext.nonTlbTranscludeDirective,
           hasTranscludeDirective = false,
-          hasElementTranscludeDirective = previousCompileContext.hasElementTranscludeDirective,
+          hasElementTranscludeDirective = false,
           $compileNode = templateAttrs.$$element = jqLite(compileNode),
           directive,
           directiveName,
@@ -5935,7 +6980,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           hasTranscludeDirective = true;
 
           // Special case ngIf and ngRepeat so that we don't complain about duplicate transclusion.
-          // This option should only be used by directives that know how to safely handle element transclusion,
+          // This option should only be used by directives that know how to how to safely handle element transclusion,
           // where the transcluded nodes are added or replaced after linking.
           if (!directive.$$tlb) {
             assertNoDuplicate('transclusion', nonTlbTranscludeDirective, directive, $compileNode);
@@ -5982,7 +7027,9 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
           if (directive.replace) {
             replaceDirective = directive;
-            $template = directiveTemplateContents(directiveValue);
+            $template = jqLite('<div>' +
+                                 trim(directiveValue) +
+                               '</div>').contents();
             compileNode = $template[0];
 
             if ($template.length != 1 || compileNode.nodeType !== 1) {
@@ -6053,7 +7100,6 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
 
       nodeLinkFn.scope = newScopeDirective && newScopeDirective.scope === true;
       nodeLinkFn.transclude = hasTranscludeDirective && childTranscludeFn;
-      previousCompileContext.hasElementTranscludeDirective = hasElementTranscludeDirective;
 
       // might be normal or delayed nodeLinkFn depending on if templateUrl is present
       return nodeLinkFn;
@@ -6381,28 +7427,6 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
     }
 
 
-    function directiveTemplateContents(template) {
-      var type;
-      template = trim(template);
-      if ((type = TABLE_CONTENT_REGEXP.exec(template))) {
-        type = type[1].toLowerCase();
-        var table = jqLite('<table>' + template + '</table>'),
-            tbody = table.children('tbody'),
-            leaf = /(td|th)/.test(type) && table.find('tr');
-        if (tbody.length && type !== 'tbody') {
-          table = tbody;
-        }
-        if (leaf && leaf.length) {
-          table = leaf;
-        }
-        return table.contents();
-      }
-      return jqLite('<div>' +
-                      template +
-                    '</div>').contents();
-    }
-
-
     function compileTemplateUrl(directives, $compileNode, tAttrs,
         $rootElement, childTranscludeFn, preLinkFns, postLinkFns, previousCompileContext) {
       var linkQueue = [],
@@ -6427,7 +7451,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           content = denormalizeTemplate(content);
 
           if (origAsyncDirective.replace) {
-            $template = directiveTemplateContents(content);
+            $template = jqLite('<div>' + trim(content) + '</div>').contents();
             compileNode = $template[0];
 
             if ($template.length != 1 || compileNode.nodeType !== 1) {
@@ -6471,18 +7495,9 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
                 linkNode = $compileNode[0];
 
             if (beforeTemplateLinkNode !== beforeTemplateCompileNode) {
-              var oldClasses = beforeTemplateLinkNode.className;
-
-              if (!(previousCompileContext.hasElementTranscludeDirective &&
-                  origAsyncDirective.replace)) {
-                // it was cloned therefore we have to clone as well.
-                linkNode = jqLiteClone(compileNode);
-              }
-
+              // it was cloned therefore we have to clone as well.
+              linkNode = jqLiteClone(compileNode);
               replaceWith(linkRootElement, jqLite(beforeTemplateLinkNode), linkNode);
-
-              // Copy in CSS classes from original node
-              safeAddClass(jqLite(linkNode), oldClasses);
             }
             if (afterTemplateNodeLinkFn.transclude) {
               childBoundTranscludeFn = createBoundTranscludeFn(scope, afterTemplateNodeLinkFn.transclude);
@@ -6730,7 +7745,7 @@ function directiveNormalize(name) {
  *
  *
  * @param {string} name Normalized element attribute name of the property to modify. The name is
- *          reverse-translated using the {@link ng.$compile.directive.Attributes#$attr $attr}
+ *          revers translated using the {@link ng.$compile.directive.Attributes#$attr $attr}
  *          property to the original name.
  * @param {string} value Value to set the attribute to. The value can be an interpolated string.
  */
@@ -6868,7 +7883,8 @@ function $ControllerProvider() {
  * @requires $window
  *
  * @description
- * A {@link angular.element jQuery or jqLite} wrapper for the browser's `window.document` object.
+ * A {@link angular.element jQuery (lite)}-wrapped reference to the browser's `window.document`
+ * element.
  */
 function $DocumentProvider(){
   this.$get = ['$window', function(window){
@@ -7027,9 +8043,9 @@ function $HttpProvider() {
       common: {
         'Accept': 'application/json, text/plain, */*'
       },
-      post:   copy(CONTENT_TYPE_APPLICATION_JSON),
-      put:    copy(CONTENT_TYPE_APPLICATION_JSON),
-      patch:  copy(CONTENT_TYPE_APPLICATION_JSON)
+      post:   CONTENT_TYPE_APPLICATION_JSON,
+      put:    CONTENT_TYPE_APPLICATION_JSON,
+      patch:  CONTENT_TYPE_APPLICATION_JSON
     },
 
     xsrfCookieName: 'XSRF-TOKEN',
@@ -7139,14 +8155,31 @@ function $HttpProvider() {
      * XMLHttpRequest will transparently follow it, meaning that the error callback will not be
      * called for such responses.
      *
+     * # Calling $http from outside AngularJS
+     * The `$http` service will not actually send the request until the next `$digest()` is
+     * executed. Normally this is not an issue, since almost all the time your call to `$http` will
+     * be from within a `$apply()` block.
+     * If you are calling `$http` from outside Angular, then you should wrap it in a call to
+     * `$apply` to cause a $digest to occur and also to handle errors in the block correctly.
+     *
+     * ```
+     * $scope.$apply(function() {
+     *   $http(...);
+     * });
+     * ```
+     *
      * # Writing Unit Tests that use $http
-     * When unit testing (using {@link api/ngMock ngMock}), it is necessary to call
-     * {@link api/ngMock.$httpBackend#methods_flush $httpBackend.flush()} to flush each pending
-     * request using trained responses.
+     * When unit testing you are mostly responsible for scheduling the `$digest` cycle. If you do
+     * not trigger a `$digest` before calling `$httpBackend.flush()` then the request will not have
+     * been made and `$httpBackend.expect(...)` expectations will fail.  The solution is to run the
+     * code that calls the `$http()` method inside a $apply block as explained in the previous
+     * section.
      *
      * ```
      * $httpBackend.expectGET(...);
-     * $http.get(...);
+     * $scope.$apply(function() {
+     *   $http.get(...);
+     * });
      * $httpBackend.flush();
      * ```
      *
@@ -7190,15 +8223,7 @@ function $HttpProvider() {
      * `$httpProvider.defaults.headers.get = { 'My-Header' : 'value' }.
      *
      * The defaults can also be set at runtime via the `$http.defaults` object in the same
-     * fashion. For example:
-     *
-     * ```
-     * module.run(function($http) {
-     *   $http.defaults.headers.common.Authentication = 'Basic YmVlcDpib29w'
-     * });
-     * ```
-     *
-     * In addition, you can supply a `headers` property in the config object passed when
+     * fashion. In addition, you can supply a `headers` property in the config object passed when
      * calling `$http(config)`, which overrides the defaults without changing them globally.
      *
      *
@@ -7222,9 +8247,7 @@ function $HttpProvider() {
      * properties. These properties are by default an array of transform functions, which allows you
      * to `push` or `unshift` a new transformation function into the transformation chain. You can
      * also decide to completely override any default transformations by assigning your
-     * transformation functions to these properties directly without the array wrapper.  These defaults
-     * are again available on the $http factory at run-time, which may be useful if you have run-time
-     * services you wish to be involved in your transformations.
+     * transformation functions to these properties directly without the array wrapper.
      *
      * Similarly, to locally override the request/response transforms, augment the
      * `transformRequest` and/or `transformResponse` properties of the configuration object passed
@@ -7438,8 +8461,7 @@ function $HttpProvider() {
      * for added security.
      *
      * The name of the headers can be specified using the xsrfHeaderName and xsrfCookieName
-     * properties of either $httpProvider.defaults at config-time, $http.defaults at run-time,
-     * or the per-request config object.
+     * properties of either $httpProvider.defaults, or the per-request config object.
      *
      *
      * @param {object} config Object describing the request to be made and how it should be
@@ -7503,14 +8525,14 @@ function $HttpProvider() {
       <option>JSONP</option>
     </select>
     <input type="text" ng-model="url" size="80"/>
-    <button id="fetchbtn" ng-click="fetch()">fetch</button><br>
-    <button id="samplegetbtn" ng-click="updateModel('GET', 'http-hello.html')">Sample GET</button>
-    <button id="samplejsonpbtn"
+    <button ng-click="fetch()">fetch</button><br>
+    <button ng-click="updateModel('GET', 'http-hello.html')">Sample GET</button>
+    <button
       ng-click="updateModel('JSONP',
                     'http://angularjs.org/greet.php?callback=JSON_CALLBACK&name=Super%20Hero')">
       Sample JSONP
     </button>
-    <button id="invalidjsonpbtn"
+    <button
       ng-click="updateModel('JSONP', 'http://angularjs.org/doesntexist&callback=JSON_CALLBACK')">
         Invalid JSONP
       </button>
@@ -7547,34 +8569,27 @@ function $HttpProvider() {
 <file name="http-hello.html">
   Hello, $http!
 </file>
-<file name="protractorTest.js">
-  var status = element(by.binding('status'));
-  var data = element(by.binding('data'));
-  var fetchBtn = element(by.id('fetchbtn'));
-  var sampleGetBtn = element(by.id('samplegetbtn'));
-  var sampleJsonpBtn = element(by.id('samplejsonpbtn'));
-  var invalidJsonpBtn = element(by.id('invalidjsonpbtn'));
-
+<file name="scenario.js">
   it('should make an xhr GET request', function() {
-    sampleGetBtn.click();
-    fetchBtn.click();
-    expect(status.getText()).toMatch('200');
-    expect(data.getText()).toMatch(/Hello, \$http!/)
+    element(':button:contains("Sample GET")').click();
+    element(':button:contains("fetch")').click();
+    expect(binding('status')).toBe('200');
+    expect(binding('data')).toMatch(/Hello, \$http!/);
   });
 
   it('should make a JSONP request to angularjs.org', function() {
-    sampleJsonpBtn.click();
-    fetchBtn.click();
-    expect(status.getText()).toMatch('200');
-    expect(data.getText()).toMatch(/Super Hero!/);
+    element(':button:contains("Sample JSONP")').click();
+    element(':button:contains("fetch")').click();
+    expect(binding('status')).toBe('200');
+    expect(binding('data')).toMatch(/Super Hero!/);
   });
 
   it('should make JSONP request to invalid URL and invoke the error handler',
       function() {
-    invalidJsonpBtn.click();
-    fetchBtn.click();
-    expect(status.getText()).toMatch('0');
-    expect(data.getText()).toMatch('Request failed');
+    element(':button:contains("Invalid JSONP")').click();
+    element(':button:contains("fetch")').click();
+    expect(binding('status')).toBe('0');
+    expect(binding('data')).toBe('Request failed');
   });
 </file>
 </example>
@@ -7955,19 +8970,14 @@ function $HttpProvider() {
   }];
 }
 
-function createXhr(method) {
-    //if IE and the method is not RFC2616 compliant, or if XMLHttpRequest
-    //is not available, try getting an ActiveXObject. Otherwise, use XMLHttpRequest
-    //if it is available
-    if (msie <= 8 && (!method.match(/^(get|post|head|put|delete|options)$/i) ||
-      !window.XMLHttpRequest)) {
-      return new window.ActiveXObject("Microsoft.XMLHTTP");
-    } else if (window.XMLHttpRequest) {
-      return new window.XMLHttpRequest();
-    }
+var XHR = window.XMLHttpRequest || function() {
+  /* global ActiveXObject */
+  try { return new ActiveXObject("Msxml2.XMLHTTP.6.0"); } catch (e1) {}
+  try { return new ActiveXObject("Msxml2.XMLHTTP.3.0"); } catch (e2) {}
+  try { return new ActiveXObject("Msxml2.XMLHTTP"); } catch (e3) {}
+  throw minErr('$httpBackend')('noxhr', "This browser does not support XMLHttpRequest.");
+};
 
-    throw minErr('$httpBackend')('noxhr', "This browser does not support XMLHttpRequest.");
-}
 
 /**
  * @ngdoc object
@@ -7988,11 +8998,11 @@ function createXhr(method) {
  */
 function $HttpBackendProvider() {
   this.$get = ['$browser', '$window', '$document', function($browser, $window, $document) {
-    return createHttpBackend($browser, createXhr, $browser.defer, $window.angular.callbacks, $document[0]);
+    return createHttpBackend($browser, XHR, $browser.defer, $window.angular.callbacks, $document[0]);
   }];
 }
 
-function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDocument) {
+function createHttpBackend($browser, XHR, $browserDefer, callbacks, rawDocument) {
   var ABORTED = -1;
 
   // TODO(vojta): fix the signature
@@ -8014,12 +9024,10 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
         } else {
           completeRequest(callback, status || -2);
         }
-        callbacks[callbackId] = angular.noop;
+        delete callbacks[callbackId];
       });
     } else {
-
-      var xhr = createXhr(method);
-
+      var xhr = new XHR();
       xhr.open(method, url, true);
       forEach(headers, function(value, key) {
         if (isDefined(value)) {
@@ -8031,25 +9039,17 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
       // response is in the cache. the promise api will ensure that to the app code the api is
       // always async
       xhr.onreadystatechange = function() {
-        // onreadystatechange might get called multiple times with readyState === 4 on mobile webkit caused by
-        // xhrs that are resolved while the app is in the background (see #5426).
-        // since calling completeRequest sets the `xhr` variable to null, we just check if it's not null before
-        // continuing
-        //
-        // we can't set xhr.onreadystatechange to undefined or delete it because that breaks IE8 (method=PATCH) and
-        // Safari respectively.
-        if (xhr && xhr.readyState == 4) {
+        if (xhr.readyState == 4) {
           var responseHeaders = null,
               response = null;
 
           if(status !== ABORTED) {
             responseHeaders = xhr.getAllResponseHeaders();
-
-            // responseText is the old-school way of retrieving response (supported by IE8 & 9)
-            // response/responseType properties were introduced in XHR Level2 spec (supported by IE10)
-            response = ('response' in xhr) ? xhr.response : xhr.responseText;
+            response = xhr.responseType ? xhr.response : xhr.responseText;
           }
 
+          // responseText is the old-school way of retrieving response (supported by IE8 & 9)
+          // response/responseType properties were introduced in XHR Level2 spec (supported by IE10)
           completeRequest(callback,
               status || xhr.status,
               response,
@@ -8062,20 +9062,7 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
       }
 
       if (responseType) {
-        try {
-          xhr.responseType = responseType;
-        } catch (e) {
-          // WebKit added support for the json responseType value on 09/03/2013
-          // https://bugs.webkit.org/show_bug.cgi?id=73648. Versions of Safari prior to 7 are
-          // known to throw when setting the value "json" as the response type. Other older
-          // browsers implementing the responseType 
-          //
-          // The json response type can be ignored if not supported, because JSON payloads are
-          // parsed on the client-side regardless.
-          if (responseType !== 'json') {
-            throw e;
-          }
-        }
+        xhr.responseType = responseType;
       }
 
       xhr.send(post || null);
@@ -8095,14 +9082,14 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
     }
 
     function completeRequest(callback, status, response, headersString) {
+      var protocol = urlResolve(url).protocol;
+
       // cancel timeout and subsequent timeout promise resolution
       timeoutId && $browserDefer.cancel(timeoutId);
       jsonpDone = xhr = null;
 
-      // fix status code when it is 0 (0 status is undocumented).
-      // Occurs when accessing file resources.
-      // On Android 4.1 stock browser it occurs while retrieving files from application cache.
-      status = (status === 0) ? (response ? 200 : 404) : status;
+      // fix status code for file protocol (it's always 0)
+      status = (protocol == 'file' && status === 0) ? (response ? 200 : 404) : status;
 
       // normalize IE bug (http://bugs.jquery.com/ticket/1450)
       status = status == 1223 ? 204 : status;
@@ -8174,11 +9161,11 @@ var $interpolateMinErr = minErr('$interpolate');
     //demo.label//
 </div>
 </doc:source>
-<doc:protractor>
-  it('should interpolate binding with custom symbols', function() {
-    expect(element(by.binding('demo.label')).getText()).toBe('This binding is brought you by // interpolation symbols.');
-  });
-</doc:protractor>
+<doc:scenario>
+ it('should interpolate binding with custom symbols', function() {
+  expect(binding('demo.label')).toBe('This binding is brought you by // interpolation symbols.');
+ });
+</doc:scenario>
 </doc:example>
  */
 function $InterpolateProvider() {
@@ -8370,7 +9357,7 @@ function $InterpolateProvider() {
      * @description
      * Symbol to denote the end of expression in the interpolated string. Defaults to `}}`.
      *
-     * Use {@link ng.$interpolateProvider#methods_endSymbol $interpolateProvider#endSymbol} to change
+     * Use {@link ng.$interpolateProvider#endSymbol $interpolateProvider#endSymbol} to change
      * the symbol.
      *
      * @returns {string} start symbol.
@@ -8406,7 +9393,7 @@ function $IntervalProvider() {
       * In tests you can use {@link ngMock.$interval#methods_flush `$interval.flush(millis)`} to
       * move forward by `millis` milliseconds and trigger any functions scheduled to run in that
       * time.
-      *
+      * 
       * <div class="alert alert-warning">
       * **Note**: Intervals created by this service must be explicitly destroyed when you are finished
       * with them.  In particular they are not automatically destroyed when a controller's scope or a
@@ -8519,8 +9506,8 @@ function $IntervalProvider() {
           promise = deferred.promise,
           iteration = 0,
           skipApply = (isDefined(invokeApply) && !invokeApply);
-
-      count = isDefined(count) ? count : 0;
+      
+      count = isDefined(count) ? count : 0,
 
       promise.then(null, null, fn);
 
@@ -9214,9 +10201,9 @@ function $LocationProvider(){
    * @eventType broadcast on root scope
    * @description
    * Broadcasted before a URL will change. This change can be prevented by calling
-   * `preventDefault` method of the event. See {@link ng.$rootScope.Scope#methods_$on} for more
+   * `preventDefault` method of the event. See {@link ng.$rootScope.Scope#$on} for more
    * details about event object. Upon successful change
-   * {@link ng.$location#events_$locationChangeSuccess $locationChangeSuccess} is fired.
+   * {@link ng.$location#$locationChangeSuccess $locationChangeSuccess} is fired.
    *
    * @param {Object} angularEvent Synthetic event object.
    * @param {string} newUrl New URL
@@ -9299,17 +10286,16 @@ function $LocationProvider(){
     // update $location when $browser url changes
     $browser.onUrlChange(function(newUrl) {
       if ($location.absUrl() != newUrl) {
+        if ($rootScope.$broadcast('$locationChangeStart', newUrl,
+                                  $location.absUrl()).defaultPrevented) {
+          $browser.url($location.absUrl());
+          return;
+        }
         $rootScope.$evalAsync(function() {
           var oldUrl = $location.absUrl();
 
           $location.$$parse(newUrl);
-          if ($rootScope.$broadcast('$locationChangeStart', newUrl,
-                                    oldUrl).defaultPrevented) {
-            $location.$$parse(oldUrl);
-            $browser.url(oldUrl);
-          } else {
-            afterLocationChange(oldUrl);
-          }
+          afterLocationChange(oldUrl);
         });
         if (!$rootScope.$$phase) $rootScope.$digest();
       }
@@ -9397,7 +10383,7 @@ function $LogProvider(){
    * @name ng.$logProvider#debugEnabled
    * @methodOf ng.$logProvider
    * @description
-   * @param {boolean=} flag enable or disable debug level messages
+   * @param {string=} flag enable or disable debug level messages
    * @returns {*} current value if used as getter or itself (chaining) if used as setter
    */
   this.debugEnabled = function(flag) {
@@ -10220,7 +11206,7 @@ Parser.prototype = {
     var getter = getterFn(field, this.options, this.text);
 
     return extend(function(scope, locals, self) {
-      return getter(self || object(scope, locals));
+      return getter(self || object(scope, locals), locals);
     }, {
       assign: function(scope, value, locals) {
         return setter(object(scope, locals), field, value, parser.text, parser.options);
@@ -10407,20 +11393,16 @@ function cspSafeGetterFn(key0, key1, key2, key3, key4, fullExp, options) {
           if (pathVal == null) return pathVal;
           pathVal = pathVal[key0];
 
-          if (!key1) return pathVal;
-          if (pathVal == null) return undefined;
+          if (pathVal == null) return key1 ? undefined : pathVal;
           pathVal = pathVal[key1];
 
-          if (!key2) return pathVal;
-          if (pathVal == null) return undefined;
+          if (pathVal == null) return key2 ? undefined : pathVal;
           pathVal = pathVal[key2];
 
-          if (!key3) return pathVal;
-          if (pathVal == null) return undefined;
+          if (pathVal == null) return key3 ? undefined : pathVal;
           pathVal = pathVal[key3];
 
-          if (!key4) return pathVal;
-          if (pathVal == null) return undefined;
+          if (pathVal == null) return key4 ? undefined : pathVal;
           pathVal = pathVal[key4];
 
           return pathVal;
@@ -10441,9 +11423,8 @@ function cspSafeGetterFn(key0, key1, key2, key3, key4, fullExp, options) {
             }
             pathVal = pathVal.$$v;
           }
+          if (pathVal == null) return key1 ? undefined : pathVal;
 
-          if (!key1) return pathVal;
-          if (pathVal == null) return undefined;
           pathVal = pathVal[key1];
           if (pathVal && pathVal.then) {
             promiseWarning(fullExp);
@@ -10454,9 +11435,8 @@ function cspSafeGetterFn(key0, key1, key2, key3, key4, fullExp, options) {
             }
             pathVal = pathVal.$$v;
           }
+          if (pathVal == null) return key2 ? undefined : pathVal;
 
-          if (!key2) return pathVal;
-          if (pathVal == null) return undefined;
           pathVal = pathVal[key2];
           if (pathVal && pathVal.then) {
             promiseWarning(fullExp);
@@ -10467,9 +11447,8 @@ function cspSafeGetterFn(key0, key1, key2, key3, key4, fullExp, options) {
             }
             pathVal = pathVal.$$v;
           }
+          if (pathVal == null) return key3 ? undefined : pathVal;
 
-          if (!key3) return pathVal;
-          if (pathVal == null) return undefined;
           pathVal = pathVal[key3];
           if (pathVal && pathVal.then) {
             promiseWarning(fullExp);
@@ -10480,9 +11459,8 @@ function cspSafeGetterFn(key0, key1, key2, key3, key4, fullExp, options) {
             }
             pathVal = pathVal.$$v;
           }
+          if (pathVal == null) return key4 ? undefined : pathVal;
 
-          if (!key4) return pathVal;
-          if (pathVal == null) return undefined;
           pathVal = pathVal[key4];
           if (pathVal && pathVal.then) {
             promiseWarning(fullExp);
@@ -10796,9 +11774,9 @@ function $ParseProvider() {
  * asynchronous programming what `try`, `catch` and `throw` keywords are to synchronous programming.
  *
  * <pre>
- *   // for the purpose of this example let's assume that variables `$q`, `scope` and `okToGreet`
- *   // are available in the current lexical scope (they could have been injected or passed in).
- * 
+ *   // for the purpose of this example let's assume that variables `$q` and `scope` are
+ *   // available in the current lexical scope (they could have been injected or passed in).
+ *
  *   function asyncGreet(name) {
  *     var deferred = $q.defer();
  *
@@ -10853,7 +11831,7 @@ function $ParseProvider() {
  *   constructed via `$q.reject`, the promise will be rejected instead.
  * - `reject(reason)` – rejects the derived promise with the `reason`. This is equivalent to
  *   resolving it with a rejection constructed via `$q.reject`.
- * - `notify(value)` - provides updates on the status of the promise's execution. This may be called
+ * - `notify(value)` - provides updates on the status of the promises execution. This may be called
  *   multiple times before the promise is either resolved or rejected.
  *
  * **Properties**
@@ -11003,7 +11981,7 @@ function qFactory(nextTick, exceptionHandler) {
 
 
       reject: function(reason) {
-        deferred.resolve(createInternalRejectedPromise(reason));
+        deferred.resolve(reject(reason));
       },
 
 
@@ -11160,12 +12138,6 @@ function qFactory(nextTick, exceptionHandler) {
    * @returns {Promise} Returns a promise that was already resolved as rejected with the `reason`.
    */
   var reject = function(reason) {
-    var result = defer();
-    result.reject(reason);
-    return result.promise;
-  };
-
-  var createInternalRejectedPromise = function(reason) {
     return {
       then: function(callback, errback) {
         var result = defer();
@@ -11433,7 +12405,6 @@ function $RootScopeProvider(){
       this.$$asyncQueue = [];
       this.$$postDigestQueue = [];
       this.$$listeners = {};
-      this.$$listenerCount = {};
       this.$$isolateBindings = {};
     }
 
@@ -11486,14 +12457,13 @@ function $RootScopeProvider(){
         } else {
           ChildScope = function() {}; // should be anonymous; This is so that when the minifier munges
             // the name it does not become random set of chars. This will then show up as class
-            // name in the web inspector.
+            // name in the debugger.
           ChildScope.prototype = this;
           child = new ChildScope();
           child.$id = nextUid();
         }
         child['this'] = child;
         child.$$listeners = {};
-        child.$$listenerCount = {};
         child.$parent = this;
         child.$$watchers = child.$$nextSibling = child.$$childHead = child.$$childTail = null;
         child.$$prevSibling = this.$$childTail;
@@ -11587,7 +12557,7 @@ function $RootScopeProvider(){
            // No digest has been run so the counter will be zero
            expect(scope.foodCounter).toEqual(0);
 
-           // Run the digest but since food has not changed count will still be zero
+           // Run the digest but since food has not changed cout will still be zero
            scope.$digest();
            expect(scope.foodCounter).toEqual(0);
 
@@ -11653,7 +12623,6 @@ function $RootScopeProvider(){
 
         return function() {
           arrayRemove(array, watcher);
-          lastDirtyWatch = null;
         };
       },
 
@@ -11932,7 +12901,7 @@ function $RootScopeProvider(){
 
           // `break traverseScopesLoop;` takes us to here
 
-          if((dirty || asyncQueue.length) && !(ttl--)) {
+          if(dirty && !(ttl--)) {
             clearPhase();
             throw $rootScopeMinErr('infdig',
                 '{0} $digest() iterations reached. Aborting!\n' +
@@ -11998,8 +12967,6 @@ function $RootScopeProvider(){
         this.$broadcast('$destroy');
         this.$$destroyed = true;
         if (this === $rootScope) return;
-
-        forEach(this.$$listenerCount, bind(null, decrementListenerCount, this));
 
         if (parent.$$childHead == this) parent.$$childHead = this.$$nextSibling;
         if (parent.$$childTail == this) parent.$$childTail = this.$$prevSibling;
@@ -12190,18 +13157,8 @@ function $RootScopeProvider(){
         }
         namedListeners.push(listener);
 
-        var current = this;
-        do {
-          if (!current.$$listenerCount[name]) {
-            current.$$listenerCount[name] = 0;
-          }
-          current.$$listenerCount[name]++;
-        } while ((current = current.$parent));
-
-        var self = this;
         return function() {
           namedListeners[indexOf(namedListeners, listener)] = null;
-          decrementListenerCount(self, 1, name);
         };
       },
 
@@ -12226,7 +13183,7 @@ function $RootScopeProvider(){
        * onto the {@link ng.$exceptionHandler $exceptionHandler} service.
        *
        * @param {string} name Event name to emit.
-       * @param {...*} args Optional one or more arguments which will be passed onto the event listeners.
+       * @param {...*} args Optional set of arguments which will be passed onto the event listeners.
        * @return {Object} Event object (see {@link ng.$rootScope.Scope#methods_$on}).
        */
       $emit: function(name, args) {
@@ -12294,7 +13251,7 @@ function $RootScopeProvider(){
        * onto the {@link ng.$exceptionHandler $exceptionHandler} service.
        *
        * @param {string} name Event name to broadcast.
-       * @param {...*} args Optional one or more arguments which will be passed onto the event listeners.
+       * @param {...*} args Optional set of arguments which will be passed onto the event listeners.
        * @return {Object} Event object, see {@link ng.$rootScope.Scope#methods_$on}
        */
       $broadcast: function(name, args) {
@@ -12313,7 +13270,8 @@ function $RootScopeProvider(){
             listeners, i, length;
 
         //down while you can, then up and next sibling or up and next sibling until back at root
-        while ((current = next)) {
+        do {
+          current = next;
           event.currentScope = current;
           listeners = current.$$listeners[name] || [];
           for (i=0, length = listeners.length; i<length; i++) {
@@ -12335,14 +13293,12 @@ function $RootScopeProvider(){
           // Insanity Warning: scope depth-first traversal
           // yes, this code is a bit crazy, but it works and we have tests to prove it!
           // this piece should be kept in sync with the traversal in $digest
-          // (though it differs due to having the extra check for $$listenerCount)
-          if (!(next = ((current.$$listenerCount[name] && current.$$childHead) ||
-              (current !== target && current.$$nextSibling)))) {
+          if (!(next = (current.$$childHead || (current !== target && current.$$nextSibling)))) {
             while(current !== target && !(next = current.$$nextSibling)) {
               current = current.$parent;
             }
           }
-        }
+        } while ((current = next));
 
         return event;
       }
@@ -12369,16 +13325,6 @@ function $RootScopeProvider(){
       var fn = $parse(exp);
       assertArgFn(fn, name);
       return fn;
-    }
-
-    function decrementListenerCount(current, count, name) {
-      do {
-        current.$$listenerCount[name] -= count;
-
-        if (current.$$listenerCount[name] === 0) {
-          delete current.$$listenerCount[name];
-        }
-      } while ((current = current.$parent));
     }
 
     /**
@@ -12737,7 +13683,7 @@ function $SceDelegateProvider() {
      *
      * @description
      * Returns an object that is trusted by angular for use in specified strict
-     * contextual escaping contexts (such as ng-bind-html, ng-include, any src
+     * contextual escaping contexts (such as ng-html-bind-unsafe, ng-include, any src
      * attribute interpolation, any dom event binding attribute interpolation
      * such as for onclick,  etc.) that uses the provided value.
      * See {@link ng.$sce $sce} for enabling strict contextual escaping.
@@ -12783,7 +13729,7 @@ function $SceDelegateProvider() {
      *
      * @param {*} value The result of a prior {@link ng.$sceDelegate#methods_trustAs `$sceDelegate.trustAs`}
      *      call or anything else.
-     * @returns {*} The `value` that was originally provided to {@link ng.$sceDelegate#methods_trustAs
+     * @returns {*} The value the was originally provided to {@link ng.$sceDelegate#methods_trustAs
      *     `$sceDelegate.trustAs`} if `value` is the result of such a call.  Otherwise, returns
      *     `value` unchanged.
      */
@@ -12964,8 +13910,8 @@ function $SceDelegateProvider() {
  * It's important to remember that SCE only applies to interpolation expressions.
  *
  * If your expressions are constant literals, they're automatically trusted and you don't need to
- * call `$sce.trustAs` on them (remember to include the `ngSanitize` module) (e.g.
- * `<div ng-bind-html="'<b>implicitly trusted</b>'"></div>`) just works.
+ * call `$sce.trustAs` on them.  (e.g.
+ * `<div ng-html-bind-unsafe="'<b>implicitly trusted</b>'"></div>`) just works.
  *
  * Additionally, `a[href]` and `img[src]` automatically sanitize their URLs and do not pass them
  * through {@link ng.$sce#methods_getTrusted $sce.getTrusted}.  SCE doesn't play a role here.
@@ -13025,7 +13971,7 @@ function $SceDelegateProvider() {
  *      matched against the **entire** *normalized / absolute URL* of the resource being tested
  *      (even when the RegExp did not have the `^` and `$` codes.)  In addition, any flags
  *      present on the RegExp (such as multiline, global, ignoreCase) are ignored.
- *    - If you are generating your JavaScript from some other templating engine (not
+ *    - If you are generating your Javascript from some other templating engine (not
  *      recommended, e.g. in issue [#4006](https://github.com/angular/angular.js/issues/4006)),
  *      remember to escape your regular expression (and be aware that you might need more than
  *      one level of escaping depending on your templating engine and the way you interpolated
@@ -13042,7 +13988,7 @@ function $SceDelegateProvider() {
  * ## Show me an example using SCE.
  *
  * @example
-<example module="mySceApp" deps="angular-sanitize.js">
+<example module="mySceApp">
 <file name="index.html">
   <div ng-controller="myAppController as myCtrl">
     <i ng-bind-html="myCtrl.explicitlyTrustedHtml" id="explicitlyTrustedHtml"></i><br><br>
@@ -13086,15 +14032,13 @@ function $SceDelegateProvider() {
 ]
 </file>
 
-<file name="protractorTest.js">
+<file name="scenario.js">
   describe('SCE doc demo', function() {
     it('should sanitize untrusted values', function() {
-      expect(element(by.css('.htmlComment')).getInnerHtml())
-          .toBe('<span>Is <i>anyone</i> reading this?</span>');
+      expect(element('.htmlComment').html()).toBe('<span>Is <i>anyone</i> reading this?</span>');
     });
-
     it('should NOT sanitize explicitly trusted values', function() {
-      expect(element(by.id('explicitlyTrustedHtml')).getInnerHtml()).toBe(
+      expect(element('#explicitlyTrustedHtml').html()).toBe(
           '<span onmouseover="this.textContent=&quot;Explicitly trusted HTML bypasses ' +
           'sanitization.&quot;">Hover over this text.</span>');
     });
@@ -13269,8 +14213,8 @@ function $SceProvider() {
      *
      * @description
      * Delegates to {@link ng.$sceDelegate#methods_trustAs `$sceDelegate.trustAs`}.  As such,
-     * returns an object that is trusted by angular for use in specified strict contextual
-     * escaping contexts (such as ng-bind-html, ng-include, any src attribute
+     * returns an objectthat is trusted by angular for use in specified strict contextual
+     * escaping contexts (such as ng-html-bind-unsafe, ng-include, any src attribute
      * interpolation, any dom event binding attribute interpolation such as for onclick,  etc.)
      * that uses the provided value.  See * {@link ng.$sce $sce} for enabling strict contextual
      * escaping.
@@ -13601,7 +14545,7 @@ function $SnifferProvider() {
       // http://code.google.com/p/android/issues/detail?id=17471
       // https://github.com/angular/angular.js/issues/904
 
-      // older webkit browser (533.9) on Boxee box has exactly the same problem as Android has
+      // older webit browser (533.9) on Boxee box has exactly the same problem as Android has
       // so let's not use the history API also
       // We are purposefully using `!(android < 4)` to cover the case when `android` is undefined
       // jshint -W018
@@ -13853,13 +14797,13 @@ function urlIsSameOrigin(requestUrl) {
          <button ng-click="doGreeting(greeting)">ALERT</button>
        </div>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
       it('should display the greeting in the input box', function() {
-       element(by.model('greeting')).sendKeys('Hello, E2E Tests');
+       input('greeting').enter('Hello, E2E Tests');
        // If we click the button it will block the test runner
        // element(':button').click();
       });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  */
 function $WindowProvider(){
@@ -14012,8 +14956,8 @@ function $FilterProvider($provide) {
  *
  *   Can be one of:
  *
- *   - `string`: The string is evaluated as an expression and the resulting value is used for substring match against
- *     the contents of the `array`. All strings or objects with string properties in `array` that contain this string
+ *   - `string`: Predicate that results in a substring match using the value of `expression`
+ *     string. All strings or objects with string properties in `array` that contain this string
  *     will be returned. The predicate can be negated by prefixing the string with `!`.
  *
  *   - `Object`: A pattern object can be used to filter specific properties on objects contained
@@ -14023,21 +14967,21 @@ function $FilterProvider($provide) {
  *     property of the object. That's equivalent to the simple substring match with a `string`
  *     as described above.
  *
- *   - `function(value)`: A predicate function can be used to write arbitrary filters. The function is
+ *   - `function`: A predicate function can be used to write arbitrary filters. The function is
  *     called for each element of `array`. The final result is an array of those elements that
  *     the predicate returned true for.
  *
- * @param {function(actual, expected)|true|undefined} comparator Comparator which is used in
+ * @param {function(expected, actual)|true|undefined} comparator Comparator which is used in
  *     determining if the expected value (from the filter expression) and actual value (from
  *     the object in the array) should be considered a match.
  *
  *   Can be one of:
  *
- *     - `function(actual, expected)`:
+ *     - `function(expected, actual)`:
  *       The function will be given the object value and the predicate value to compare and
  *       should return true if the item should be included in filtered result.
  *
- *     - `true`: A shorthand for `function(actual, expected) { return angular.equals(expected, actual)}`.
+ *     - `true`: A shorthand for `function(expected, actual) { return angular.equals(expected, actual)}`.
  *       this is essentially strict comparison of expected and actual.
  *
  *     - `false|undefined`: A short hand for a function which will look for a substring match in case
@@ -14068,47 +15012,35 @@ function $FilterProvider($provide) {
        Equality <input type="checkbox" ng-model="strict"><br>
        <table id="searchObjResults">
          <tr><th>Name</th><th>Phone</th></tr>
-         <tr ng-repeat="friendObj in friends | filter:search:strict">
-           <td>{{friendObj.name}}</td>
-           <td>{{friendObj.phone}}</td>
+         <tr ng-repeat="friend in friends | filter:search:strict">
+           <td>{{friend.name}}</td>
+           <td>{{friend.phone}}</td>
          </tr>
        </table>
      </doc:source>
-     <doc:protractor>
-       var expectFriendNames = function(expectedNames, key) {
-         element.all(by.repeater(key + ' in friends').column(key + '.name')).then(function(arr) {
-           arr.forEach(function(wd, i) {
-             expect(wd.getText()).toMatch(expectedNames[i]);
-           });
-         });
-       };
-
+     <doc:scenario>
        it('should search across all fields when filtering with a string', function() {
-         var searchText = element(by.model('searchText'));
-         searchText.clear();
-         searchText.sendKeys('m');
-         expectFriendNames(['Mary', 'Mike', 'Adam'], 'friend');
+         input('searchText').enter('m');
+         expect(repeater('#searchTextResults tr', 'friend in friends').column('friend.name')).
+           toEqual(['Mary', 'Mike', 'Adam']);
 
-         searchText.clear();
-         searchText.sendKeys('76');
-         expectFriendNames(['John', 'Julie'], 'friend');
+         input('searchText').enter('76');
+         expect(repeater('#searchTextResults tr', 'friend in friends').column('friend.name')).
+           toEqual(['John', 'Julie']);
        });
 
        it('should search in specific fields when filtering with a predicate object', function() {
-         var searchAny = element(by.model('search.$'));
-         searchAny.clear();
-         searchAny.sendKeys('i');
-         expectFriendNames(['Mary', 'Mike', 'Julie', 'Juliette'], 'friendObj');
+         input('search.$').enter('i');
+         expect(repeater('#searchObjResults tr', 'friend in friends').column('friend.name')).
+           toEqual(['Mary', 'Mike', 'Julie', 'Juliette']);
        });
        it('should use a equal comparison when comparator is true', function() {
-         var searchName = element(by.model('search.name'));
-         var strict = element(by.model('strict'));
-         searchName.clear();
-         searchName.sendKeys('Julie');
-         strict.click();
-         expectFriendNames(['Julie'], 'friendObj');
+         input('search.name').enter('Julie');
+         input('strict').check();
+         expect(repeater('#searchObjResults tr', 'friend in friends').column('friend.name')).
+           toEqual(['Julie']);
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  */
 function filterFilter() {
@@ -14134,15 +15066,6 @@ function filterFilter() {
         };
       } else {
         comparator = function(obj, text) {
-          if (obj && text && typeof obj === 'object' && typeof text === 'object') {
-            for (var objKey in obj) {
-              if (objKey.charAt(0) !== '$' && hasOwnProperty.call(obj, objKey) &&
-                  comparator(obj[objKey], text[objKey])) {
-                return true;
-              }
-            }
-            return false;
-          }
           text = (''+text).toLowerCase();
           return (''+obj).toLowerCase().indexOf(text) > -1;
         };
@@ -14192,12 +15115,23 @@ function filterFilter() {
       case "object":
         // jshint +W086
         for (var key in expression) {
-          (function(path) {
-            if (typeof expression[path] == 'undefined') return;
-            predicates.push(function(value) {
-              return search(path == '$' ? value : (value && value[path]), expression[path]);
-            });
-          })(key);
+          if (key == '$') {
+            (function() {
+              if (!expression[key]) return;
+              var path = key;
+              predicates.push(function(value) {
+                return search(value, expression[path]);
+              });
+            })();
+          } else {
+            (function() {
+              if (typeof(expression[key]) == 'undefined') { return; }
+              var path = key;
+              predicates.push(function(value) {
+                return search(getter(value,path), expression[path]);
+              });
+            })();
+          }
         }
         break;
       case 'function':
@@ -14241,27 +15175,21 @@ function filterFilter() {
        </script>
        <div ng-controller="Ctrl">
          <input type="number" ng-model="amount"> <br>
-         default currency symbol ($): <span id="currency-default">{{amount | currency}}</span><br>
-         custom currency identifier (USD$): <span>{{amount | currency:"USD$"}}</span>
+         default currency symbol ($): {{amount | currency}}<br>
+         custom currency identifier (USD$): {{amount | currency:"USD$"}}
        </div>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should init with 1234.56', function() {
-         expect(element(by.id('currency-default')).getText()).toBe('$1,234.56');
-         expect(element(by.binding('amount | currency:"USD$"')).getText()).toBe('USD$1,234.56');
+         expect(binding('amount | currency')).toBe('$1,234.56');
+         expect(binding('amount | currency:"USD$"')).toBe('USD$1,234.56');
        });
        it('should update', function() {
-         if (browser.params.browser == 'safari') {
-           // Safari does not understand the minus key. See
-           // https://github.com/angular/protractor/issues/481
-           return;
-         }
-         element(by.model('amount')).clear();
-         element(by.model('amount')).sendKeys('-1234');
-         expect(element(by.id('currency-default')).getText()).toBe('($1,234.00)');
-         expect(element(by.binding('amount | currency:"USD$"')).getText()).toBe('(USD$1,234.00)');
+         input('amount').enter('-1234');
+         expect(binding('amount | currency')).toBe('($1,234.00)');
+         expect(binding('amount | currency:"USD$"')).toBe('(USD$1,234.00)');
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  */
 currencyFilter.$inject = ['$locale'];
@@ -14300,26 +15228,25 @@ function currencyFilter($locale) {
        </script>
        <div ng-controller="Ctrl">
          Enter number: <input ng-model='val'><br>
-         Default formatting: <span id='number-default'>{{val | number}}</span><br>
-         No fractions: <span>{{val | number:0}}</span><br>
-         Negative number: <span>{{-val | number:4}}</span>
+         Default formatting: {{val | number}}<br>
+         No fractions: {{val | number:0}}<br>
+         Negative number: {{-val | number:4}}
        </div>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should format numbers', function() {
-         expect(element(by.id('number-default')).getText()).toBe('1,234.568');
-         expect(element(by.binding('val | number:0')).getText()).toBe('1,235');
-         expect(element(by.binding('-val | number:4')).getText()).toBe('-1,234.5679');
+         expect(binding('val | number')).toBe('1,234.568');
+         expect(binding('val | number:0')).toBe('1,235');
+         expect(binding('-val | number:4')).toBe('-1,234.5679');
        });
 
        it('should update', function() {
-         element(by.model('val')).clear();
-         element(by.model('val')).sendKeys('3374.333');
-         expect(element(by.id('number-default')).getText()).toBe('3,374.333');
-         expect(element(by.binding('val | number:0')).getText()).toBe('3,374');
-         expect(element(by.binding('-val | number:4')).getText()).toBe('-3,374.3330');
-      });
-     </doc:protractor>
+         input('val').enter('3374.333');
+         expect(binding('val | number')).toBe('3,374.333');
+         expect(binding('val | number:0')).toBe('3,374');
+         expect(binding('-val | number:4')).toBe('-3,374.3330');
+       });
+     </doc:scenario>
    </doc:example>
  */
 
@@ -14549,22 +15476,22 @@ var DATE_FORMATS_SPLIT = /((?:[^yMdHhmsaZE']+)|(?:'(?:[^']|'')*')|(?:E+|y+|M+|d+
    <doc:example>
      <doc:source>
        <span ng-non-bindable>{{1288323623006 | date:'medium'}}</span>:
-           <span>{{1288323623006 | date:'medium'}}</span><br>
+           {{1288323623006 | date:'medium'}}<br>
        <span ng-non-bindable>{{1288323623006 | date:'yyyy-MM-dd HH:mm:ss Z'}}</span>:
-          <span>{{1288323623006 | date:'yyyy-MM-dd HH:mm:ss Z'}}</span><br>
+          {{1288323623006 | date:'yyyy-MM-dd HH:mm:ss Z'}}<br>
        <span ng-non-bindable>{{1288323623006 | date:'MM/dd/yyyy @ h:mma'}}</span>:
-          <span>{{'1288323623006' | date:'MM/dd/yyyy @ h:mma'}}</span><br>
+          {{'1288323623006' | date:'MM/dd/yyyy @ h:mma'}}<br>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should format date', function() {
-         expect(element(by.binding("1288323623006 | date:'medium'")).getText()).
+         expect(binding("1288323623006 | date:'medium'")).
             toMatch(/Oct 2\d, 2010 \d{1,2}:\d{2}:\d{2} (AM|PM)/);
-         expect(element(by.binding("1288323623006 | date:'yyyy-MM-dd HH:mm:ss Z'")).getText()).
+         expect(binding("1288323623006 | date:'yyyy-MM-dd HH:mm:ss Z'")).
             toMatch(/2010\-10\-2\d \d{2}:\d{2}:\d{2} (\-|\+)?\d{4}/);
-         expect(element(by.binding("'1288323623006' | date:'MM/dd/yyyy @ h:mma'")).getText()).
+         expect(binding("'1288323623006' | date:'MM/dd/yyyy @ h:mma'")).
             toMatch(/10\/2\d\/2010 @ \d{1,2}:\d{2}(AM|PM)/);
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  */
 dateFilter.$inject = ['$locale'];
@@ -14663,11 +15590,11 @@ function dateFilter($locale) {
      <doc:source>
        <pre>{{ {'name':'value'} | json }}</pre>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should jsonify filtered objects', function() {
-         expect(element(by.binding("{'name':'value'}")).getText()).toMatch(/\{\n  "name": ?"value"\n}/);
+         expect(binding("{'name':'value'}")).toMatch(/\{\n  "name": ?"value"\n}/);
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  *
  */
@@ -14735,37 +15662,28 @@ var uppercaseFilter = valueFn(uppercase);
          <p>Output letters: {{ letters | limitTo:letterLimit }}</p>
        </div>
      </doc:source>
-     <doc:protractor>
-       var numLimitInput = element(by.model('numLimit'));
-       var letterLimitInput = element(by.model('letterLimit'));
-       var limitedNumbers = element(by.binding('numbers | limitTo:numLimit'));
-       var limitedLetters = element(by.binding('letters | limitTo:letterLimit'));
-
+     <doc:scenario>
        it('should limit the number array to first three items', function() {
-         expect(numLimitInput.getAttribute('value')).toBe('3');
-         expect(letterLimitInput.getAttribute('value')).toBe('3');
-         expect(limitedNumbers.getText()).toEqual('Output numbers: [1,2,3]');
-         expect(limitedLetters.getText()).toEqual('Output letters: abc');
+         expect(element('.doc-example-live input[ng-model=numLimit]').val()).toBe('3');
+         expect(element('.doc-example-live input[ng-model=letterLimit]').val()).toBe('3');
+         expect(binding('numbers | limitTo:numLimit')).toEqual('[1,2,3]');
+         expect(binding('letters | limitTo:letterLimit')).toEqual('abc');
        });
 
        it('should update the output when -3 is entered', function() {
-         numLimitInput.clear();
-         numLimitInput.sendKeys('-3');
-         letterLimitInput.clear();
-         letterLimitInput.sendKeys('-3');
-         expect(limitedNumbers.getText()).toEqual('Output numbers: [7,8,9]');
-         expect(limitedLetters.getText()).toEqual('Output letters: ghi');
+         input('numLimit').enter(-3);
+         input('letterLimit').enter(-3);
+         expect(binding('numbers | limitTo:numLimit')).toEqual('[7,8,9]');
+         expect(binding('letters | limitTo:letterLimit')).toEqual('ghi');
        });
 
        it('should not exceed the maximum size of input array', function() {
-         numLimitInput.clear();
-         numLimitInput.sendKeys('100');
-         letterLimitInput.clear();
-         letterLimitInput.sendKeys('100');
-         expect(limitedNumbers.getText()).toEqual('Output numbers: [1,2,3,4,5,6,7,8,9]');
-         expect(limitedLetters.getText()).toEqual('Output letters: abcdefghi');
+         input('numLimit').enter(100);
+         input('letterLimit').enter(100);
+         expect(binding('numbers | limitTo:numLimit')).toEqual('[1,2,3,4,5,6,7,8,9]');
+         expect(binding('letters | limitTo:letterLimit')).toEqual('abcdefghi');
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  */
 function limitToFilter(){
@@ -14866,6 +15784,29 @@ function limitToFilter(){
          </table>
        </div>
      </doc:source>
+     <doc:scenario>
+       it('should be reverse ordered by aged', function() {
+         expect(binding('predicate')).toBe('-age');
+         expect(repeater('table.friend', 'friend in friends').column('friend.age')).
+           toEqual(['35', '29', '21', '19', '10']);
+         expect(repeater('table.friend', 'friend in friends').column('friend.name')).
+           toEqual(['Adam', 'Julie', 'Mike', 'Mary', 'John']);
+       });
+
+       it('should reorder the table when user selects different predicate', function() {
+         element('.doc-example-live a:contains("Name")').click();
+         expect(repeater('table.friend', 'friend in friends').column('friend.name')).
+           toEqual(['Adam', 'John', 'Julie', 'Mary', 'Mike']);
+         expect(repeater('table.friend', 'friend in friends').column('friend.age')).
+           toEqual(['35', '10', '29', '19', '21']);
+
+         element('.doc-example-live a:contains("Phone")').click();
+         expect(repeater('table.friend', 'friend in friends').column('friend.phone')).
+           toEqual(['555-9876', '555-8765', '555-5678', '555-4321', '555-1212']);
+         expect(repeater('table.friend', 'friend in friends').column('friend.name')).
+           toEqual(['Mary', 'Julie', 'Adam', 'Mike', 'John']);
+       });
+     </doc:scenario>
    </doc:example>
  */
 orderByFilter.$inject = ['$parse'];
@@ -14962,14 +15903,11 @@ var htmlAnchorDirective = valueFn({
       element.append(document.createComment('IE fix'));
     }
 
-    if (!attr.href && !attr.xlinkHref && !attr.name) {
+    if (!attr.href && !attr.name) {
       return function(scope, element) {
-        // SVGAElement does not use the href attribute, but rather the 'xlinkHref' attribute.
-        var href = toString.call(element.prop('href')) === '[object SVGAnimatedString]' ?
-                   'xlink:href' : 'href';
         element.on('click', function(event){
           // if we have no href url, then don't navigate anywhere.
-          if (!element.attr(href)) {
+          if (!element.attr('href')) {
             event.preventDefault();
           }
         });
@@ -15019,55 +15957,46 @@ var htmlAnchorDirective = valueFn({
         <a id="link-5" name="xxx" ng-click="value = 5">anchor</a> (no link)<br />
         <a id="link-6" ng-href="{{value}}">link</a> (link, change location)
       </doc:source>
-      <doc:protractor>
+      <doc:scenario>
         it('should execute ng-click but not reload when href without value', function() {
-          element(by.id('link-1')).click();
-          expect(element(by.model('value')).getAttribute('value')).toEqual('1');
-          expect(element(by.id('link-1')).getAttribute('href')).toBe('');
+          element('#link-1').click();
+          expect(input('value').val()).toEqual('1');
+          expect(element('#link-1').attr('href')).toBe("");
         });
 
         it('should execute ng-click but not reload when href empty string', function() {
-          element(by.id('link-2')).click();
-          expect(element(by.model('value')).getAttribute('value')).toEqual('2');
-          expect(element(by.id('link-2')).getAttribute('href')).toBe('');
+          element('#link-2').click();
+          expect(input('value').val()).toEqual('2');
+          expect(element('#link-2').attr('href')).toBe("");
         });
 
         it('should execute ng-click and change url when ng-href specified', function() {
-          expect(element(by.id('link-3')).getAttribute('href')).toMatch(/\/123$/);
+          expect(element('#link-3').attr('href')).toBe("/123");
 
-          element(by.id('link-3')).click();
-
-          // At this point, we navigate away from an Angular page, so we need
-          // to use browser.driver to get the base webdriver.
-
-          browser.wait(function() {
-            return browser.driver.getCurrentUrl().then(function(url) {
-              return url.match(/\/123$/);
-            });
-          }, 1000, 'page should navigate to /123');
+          element('#link-3').click();
+          expect(browser().window().path()).toEqual('/123');
         });
 
         it('should execute ng-click but not reload when href empty string and name specified', function() {
-          element(by.id('link-4')).click();
-          expect(element(by.model('value')).getAttribute('value')).toEqual('4');
-          expect(element(by.id('link-4')).getAttribute('href')).toBe('');
+          element('#link-4').click();
+          expect(input('value').val()).toEqual('4');
+          expect(element('#link-4').attr('href')).toBe('');
         });
 
         it('should execute ng-click but not reload when no href but name specified', function() {
-          element(by.id('link-5')).click();
-          expect(element(by.model('value')).getAttribute('value')).toEqual('5');
-          expect(element(by.id('link-5')).getAttribute('href')).toBe(null);
+          element('#link-5').click();
+          expect(input('value').val()).toEqual('5');
+          expect(element('#link-5').attr('href')).toBe(undefined);
         });
 
         it('should only change url when only ng-href', function() {
-          element(by.model('value')).clear();
-          element(by.model('value')).sendKeys('6');
-          expect(element(by.id('link-6')).getAttribute('href')).toMatch(/\/6$/);
+          input('value').enter('6');
+          expect(element('#link-6').attr('href')).toBe('6');
 
-          element(by.id('link-6')).click();
-          expect(browser.getCurrentUrl()).toMatch(/\/6$/);
+          element('#link-6').click();
+          expect(browser().location().url()).toEqual('/6');
         });
-      </doc:protractor>
+      </doc:scenario>
     </doc:example>
  */
 
@@ -15152,13 +16081,13 @@ var htmlAnchorDirective = valueFn({
         Click me to toggle: <input type="checkbox" ng-model="checked"><br/>
         <button ng-model="button" ng-disabled="checked">Button</button>
       </doc:source>
-      <doc:protractor>
+      <doc:scenario>
         it('should toggle button', function() {
-          expect(element(by.css('.doc-example-live button')).getAttribute('disabled')).toBeFalsy();
-          element(by.model('checked')).click();
-          expect(element(by.css('.doc-example-live button')).getAttribute('disabled')).toBeTruthy();
+          expect(element('.doc-example-live :button').prop('disabled')).toBeFalsy();
+          input('checked').check();
+          expect(element('.doc-example-live :button').prop('disabled')).toBeTruthy();
         });
-      </doc:protractor>
+      </doc:scenario>
     </doc:example>
  *
  * @element INPUT
@@ -15187,13 +16116,13 @@ var htmlAnchorDirective = valueFn({
         Check me to check both: <input type="checkbox" ng-model="master"><br/>
         <input id="checkSlave" type="checkbox" ng-checked="master">
       </doc:source>
-      <doc:protractor>
+      <doc:scenario>
         it('should check both checkBoxes', function() {
-          expect(element(by.id('checkSlave')).getAttribute('checked')).toBeFalsy();
-          element(by.model('master')).click();
-          expect(element(by.id('checkSlave')).getAttribute('checked')).toBeTruthy();
+          expect(element('.doc-example-live #checkSlave').prop('checked')).toBeFalsy();
+          input('master').check();
+          expect(element('.doc-example-live #checkSlave').prop('checked')).toBeTruthy();
         });
-      </doc:protractor>
+      </doc:scenario>
     </doc:example>
  *
  * @element INPUT
@@ -15222,13 +16151,13 @@ var htmlAnchorDirective = valueFn({
         Check me to make text readonly: <input type="checkbox" ng-model="checked"><br/>
         <input type="text" ng-readonly="checked" value="I'm Angular"/>
       </doc:source>
-      <doc:protractor>
+      <doc:scenario>
         it('should toggle readonly attr', function() {
-          expect(element(by.css('.doc-example-live [type="text"]')).getAttribute('readonly')).toBeFalsy();
-          element(by.model('checked')).click();
-          expect(element(by.css('.doc-example-live [type="text"]')).getAttribute('readonly')).toBeTruthy();
+          expect(element('.doc-example-live :text').prop('readonly')).toBeFalsy();
+          input('checked').check();
+          expect(element('.doc-example-live :text').prop('readonly')).toBeTruthy();
         });
-      </doc:protractor>
+      </doc:scenario>
     </doc:example>
  *
  * @element INPUT
@@ -15261,13 +16190,13 @@ var htmlAnchorDirective = valueFn({
           <option id="greet" ng-selected="selected">Greetings!</option>
         </select>
       </doc:source>
-      <doc:protractor>
+      <doc:scenario>
         it('should select Greetings!', function() {
-          expect(element(by.id('greet')).getAttribute('selected')).toBeFalsy();
-          element(by.model('selected')).click();
-          expect(element(by.id('greet')).getAttribute('selected')).toBeTruthy();
+          expect(element('.doc-example-live #greet').prop('selected')).toBeFalsy();
+          input('selected').check();
+          expect(element('.doc-example-live #greet').prop('selected')).toBeTruthy();
         });
-      </doc:protractor>
+      </doc:scenario>
     </doc:example>
  *
  * @element OPTION
@@ -15297,13 +16226,13 @@ var htmlAnchorDirective = valueFn({
             <summary>Show/Hide me</summary>
          </details>
        </doc:source>
-       <doc:protractor>
+       <doc:scenario>
          it('should toggle open', function() {
-           expect(element(by.id('details')).getAttribute('open')).toBeFalsy();
-           element(by.model('open')).click();
-           expect(element(by.id('details')).getAttribute('open')).toBeTruthy();
+           expect(element('#details').prop('open')).toBeFalsy();
+           input('open').check();
+           expect(element('#details').prop('open')).toBeTruthy();
          });
-       </doc:protractor>
+       </doc:scenario>
      </doc:example>
  *
  * @element DETAILS
@@ -15323,10 +16252,12 @@ forEach(BOOLEAN_ATTR, function(propName, attrName) {
   ngAttributeAliasDirectives[normalized] = function() {
     return {
       priority: 100,
-      link: function(scope, element, attr) {
-        scope.$watch(attr[normalized], function ngBooleanAttrWatchAction(value) {
-          attr.$set(attrName, !!value);
-        });
+      compile: function() {
+        return function(scope, element, attr) {
+          scope.$watch(attr[normalized], function ngBooleanAttrWatchAction(value) {
+            attr.$set(attrName, !!value);
+          });
+        };
       }
     };
   };
@@ -15606,10 +16537,10 @@ function FormController(element, attrs) {
  *
  *
  * # CSS classes
- *  - `ng-valid` is set if the form is valid.
- *  - `ng-invalid` is set if the form is invalid.
- *  - `ng-pristine` is set if the form is pristine.
- *  - `ng-dirty` is set if the form is dirty.
+ *  - `ng-valid` Is set if the form is valid.
+ *  - `ng-invalid` Is set if the form is invalid.
+ *  - `ng-pristine` Is set if the form is pristine.
+ *  - `ng-dirty` Is set if the form is dirty.
  *
  *
  * # Submitting a form and preventing the default action
@@ -15662,27 +16593,18 @@ function FormController(element, attrs) {
          <tt>myForm.$error.required = {{!!myForm.$error.required}}</tt><br>
         </form>
       </doc:source>
-      <doc:protractor>
+      <doc:scenario>
         it('should initialize to model', function() {
-          var userType = element(by.binding('userType'));
-          var valid = element(by.binding('myForm.input.$valid'));
-
-          expect(userType.getText()).toContain('guest');
-          expect(valid.getText()).toContain('true');
+         expect(binding('userType')).toEqual('guest');
+         expect(binding('myForm.input.$valid')).toEqual('true');
         });
 
         it('should be invalid if empty', function() {
-          var userType = element(by.binding('userType'));
-          var valid = element(by.binding('myForm.input.$valid'));
-          var userInput = element(by.model('userType'));
-
-          userInput.clear();
-          userInput.sendKeys('');
-
-          expect(userType.getText()).toEqual('userType =');
-          expect(valid.getText()).toContain('false');
+         input('userType').enter('');
+         expect(binding('userType')).toEqual('');
+         expect(binding('myForm.input.$valid')).toEqual('false');
         });
-      </doc:protractor>
+      </doc:scenario>
     </doc:example>
  */
 var formDirectiveFactory = function(isNgForm) {
@@ -15754,7 +16676,7 @@ var ngFormDirective = formDirectiveFactory(true);
 */
 
 var URL_REGEXP = /^(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?$/;
-var EMAIL_REGEXP = /^[a-z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-z0-9-]+(\.[a-z0-9-]+)*$/i;
+var EMAIL_REGEXP = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,6}$/;
 var NUMBER_REGEXP = /^\s*(\-|\+)?(\d+|(\d*(\.\d*)))\s*$/;
 
 var inputType = {
@@ -15807,31 +16729,29 @@ var inputType = {
            <tt>myForm.$error.required = {{!!myForm.$error.required}}</tt><br/>
           </form>
         </doc:source>
-        <doc:protractor>
-          var text = element(by.binding('text'));
-          var valid = element(by.binding('myForm.input.$valid'));
-          var input = element(by.model('text'));
-
+        <doc:scenario>
           it('should initialize to model', function() {
-            expect(text.getText()).toContain('guest');
-            expect(valid.getText()).toContain('true');
+            expect(binding('text')).toEqual('guest');
+            expect(binding('myForm.input.$valid')).toEqual('true');
           });
 
           it('should be invalid if empty', function() {
-            input.clear();
-            input.sendKeys('');
-
-            expect(text.getText()).toEqual('text =');
-            expect(valid.getText()).toContain('false');
+            input('text').enter('');
+            expect(binding('text')).toEqual('');
+            expect(binding('myForm.input.$valid')).toEqual('false');
           });
 
           it('should be invalid if multi word', function() {
-            input.clear();
-            input.sendKeys('hello world');
-
-            expect(valid.getText()).toContain('false');
+            input('text').enter('hello world');
+            expect(binding('myForm.input.$valid')).toEqual('false');
           });
-        </doc:protractor>
+
+          it('should not be trimmed', function() {
+            input('text').enter('untrimmed ');
+            expect(binding('text')).toEqual('untrimmed ');
+            expect(binding('myForm.input.$valid')).toEqual('true');
+          });
+        </doc:scenario>
       </doc:example>
    */
   'text': textInputType,
@@ -15885,30 +16805,24 @@ var inputType = {
            <tt>myForm.$error.required = {{!!myForm.$error.required}}</tt><br/>
           </form>
         </doc:source>
-        <doc:protractor>
-          var value = element(by.binding('value'));
-          var valid = element(by.binding('myForm.input.$valid'));
-          var input = element(by.model('value'));
-
+        <doc:scenario>
           it('should initialize to model', function() {
-            expect(value.getText()).toContain('12');
-            expect(valid.getText()).toContain('true');
+           expect(binding('value')).toEqual('12');
+           expect(binding('myForm.input.$valid')).toEqual('true');
           });
 
           it('should be invalid if empty', function() {
-            input.clear();
-            input.sendKeys('');
-            expect(value.getText()).toEqual('value =');
-            expect(valid.getText()).toContain('false');
+           input('value').enter('');
+           expect(binding('value')).toEqual('');
+           expect(binding('myForm.input.$valid')).toEqual('false');
           });
 
           it('should be invalid if over max', function() {
-            input.clear();
-            input.sendKeys('123');
-            expect(value.getText()).toEqual('value =');
-            expect(valid.getText()).toContain('false');
+           input('value').enter('123');
+           expect(binding('value')).toEqual('');
+           expect(binding('myForm.input.$valid')).toEqual('false');
           });
-        </doc:protractor>
+        </doc:scenario>
       </doc:example>
    */
   'number': numberInputType,
@@ -15960,31 +16874,23 @@ var inputType = {
            <tt>myForm.$error.url = {{!!myForm.$error.url}}</tt><br/>
           </form>
         </doc:source>
-        <doc:protractor>
-          var text = element(by.binding('text'));
-          var valid = element(by.binding('myForm.input.$valid'));
-          var input = element(by.model('text'));
-
+        <doc:scenario>
           it('should initialize to model', function() {
-            expect(text.getText()).toContain('http://google.com');
-            expect(valid.getText()).toContain('true');
+            expect(binding('text')).toEqual('http://google.com');
+            expect(binding('myForm.input.$valid')).toEqual('true');
           });
 
           it('should be invalid if empty', function() {
-            input.clear();
-            input.sendKeys('');
-
-            expect(text.getText()).toEqual('text =');
-            expect(valid.getText()).toContain('false');
+            input('text').enter('');
+            expect(binding('text')).toEqual('');
+            expect(binding('myForm.input.$valid')).toEqual('false');
           });
 
           it('should be invalid if not url', function() {
-            input.clear();
-            input.sendKeys('box');
-
-            expect(valid.getText()).toContain('false');
+            input('text').enter('xxx');
+            expect(binding('myForm.input.$valid')).toEqual('false');
           });
-        </doc:protractor>
+        </doc:scenario>
       </doc:example>
    */
   'url': urlInputType,
@@ -16036,30 +16942,23 @@ var inputType = {
              <tt>myForm.$error.email = {{!!myForm.$error.email}}</tt><br/>
            </form>
         </doc:source>
-        <doc:protractor>
-          var text = element(by.binding('text'));
-          var valid = element(by.binding('myForm.input.$valid'));
-          var input = element(by.model('text'));
-          
+        <doc:scenario>
           it('should initialize to model', function() {
-            expect(text.getText()).toContain('me@example.com');
-            expect(valid.getText()).toContain('true');
+            expect(binding('text')).toEqual('me@example.com');
+            expect(binding('myForm.input.$valid')).toEqual('true');
           });
 
           it('should be invalid if empty', function() {
-            input.clear();
-            input.sendKeys('');
-            expect(text.getText()).toEqual('text =');
-            expect(valid.getText()).toContain('false');
+            input('text').enter('');
+            expect(binding('text')).toEqual('');
+            expect(binding('myForm.input.$valid')).toEqual('false');
           });
 
           it('should be invalid if not email', function() {
-            input.clear();
-            input.sendKeys('xxx');
-
-            expect(valid.getText()).toContain('false');
+            input('text').enter('xxx');
+            expect(binding('myForm.input.$valid')).toEqual('false');
           });
-        </doc:protractor>
+        </doc:scenario>
       </doc:example>
    */
   'email': emailInputType,
@@ -16077,8 +16976,6 @@ var inputType = {
    * @param {string=} name Property name of the form under which the control is published.
    * @param {string=} ngChange Angular expression to be executed when input changes due to user
    *    interaction with the input element.
-   * @param {string} ngValue Angular expression which sets the value to which the expression should
-   *    be set when selected.
    *
    * @example
       <doc:example>
@@ -16086,31 +16983,23 @@ var inputType = {
          <script>
            function Ctrl($scope) {
              $scope.color = 'blue';
-             $scope.specialValue = {
-               "id": "12345",
-               "value": "green"
-             };
            }
          </script>
          <form name="myForm" ng-controller="Ctrl">
            <input type="radio" ng-model="color" value="red">  Red <br/>
-           <input type="radio" ng-model="color" ng-value="specialValue"> Green <br/>
+           <input type="radio" ng-model="color" value="green"> Green <br/>
            <input type="radio" ng-model="color" value="blue"> Blue <br/>
-           <tt>color = {{color | json}}</tt><br/>
+           <tt>color = {{color}}</tt><br/>
           </form>
-          Note that `ng-value="specialValue"` sets radio item's value to be the value of `$scope.specialValue`.
         </doc:source>
-        <doc:protractor>
+        <doc:scenario>
           it('should change state', function() {
-            var color = element(by.binding('color'));
+            expect(binding('color')).toEqual('blue');
 
-            expect(color.getText()).toContain('blue');
-
-            element.all(by.model('color')).get(0).click();
-
-            expect(color.getText()).toContain('red');
+            input('color').select('red');
+            expect(binding('color')).toEqual('red');
           });
-        </doc:protractor>
+        </doc:scenario>
       </doc:example>
    */
   'radio': radioInputType,
@@ -16147,21 +17036,17 @@ var inputType = {
            <tt>value2 = {{value2}}</tt><br/>
           </form>
         </doc:source>
-        <doc:protractor>
+        <doc:scenario>
           it('should change state', function() {
-            var value1 = element(by.binding('value1'));
-            var value2 = element(by.binding('value2'));
+            expect(binding('value1')).toEqual('true');
+            expect(binding('value2')).toEqual('YES');
 
-            expect(value1.getText()).toContain('true');
-            expect(value2.getText()).toContain('YES');
-            
-            element(by.model('value1')).click();
-            element(by.model('value2')).click();
-
-            expect(value1.getText()).toContain('false');
-            expect(value2.getText()).toContain('NO');
+            input('value1').check();
+            input('value2').check();
+            expect(binding('value1')).toEqual('false');
+            expect(binding('value2')).toEqual('NO');
           });
-        </doc:protractor>
+        </doc:scenario>
       </doc:example>
    */
   'checkbox': checkboxInputType,
@@ -16169,16 +17054,9 @@ var inputType = {
   'hidden': noop,
   'button': noop,
   'submit': noop,
-  'reset': noop,
-  'file': noop
+  'reset': noop
 };
 
-// A helper function to call $setValidity and return the value / undefined,
-// a pattern that is repeated a lot in the input validation logic.
-function validate(ctrl, validatorName, validity, value){
-  ctrl.$setValidity(validatorName, validity);
-  return validity ? value : undefined;
-}
 
 function textInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   // In composition mode, users are still inputing intermediate text buffer,
@@ -16193,7 +17071,6 @@ function textInputType(scope, element, attr, ctrl, $sniffer, $browser) {
 
     element.on('compositionend', function() {
       composing = false;
-      listener();
     });
   }
 
@@ -16209,13 +17086,9 @@ function textInputType(scope, element, attr, ctrl, $sniffer, $browser) {
     }
 
     if (ctrl.$viewValue !== value) {
-      if (scope.$$phase) {
+      scope.$apply(function() {
         ctrl.$setViewValue(value);
-      } else {
-        scope.$apply(function() {
-          ctrl.$setViewValue(value);
-        });
-      }
+      });
     }
   };
 
@@ -16264,15 +17137,22 @@ function textInputType(scope, element, attr, ctrl, $sniffer, $browser) {
       patternValidator,
       match;
 
+  var validate = function(regexp, value) {
+    if (ctrl.$isEmpty(value) || regexp.test(value)) {
+      ctrl.$setValidity('pattern', true);
+      return value;
+    } else {
+      ctrl.$setValidity('pattern', false);
+      return undefined;
+    }
+  };
+
   if (pattern) {
-    var validateRegex = function(regexp, value) {
-      return validate(ctrl, 'pattern', ctrl.$isEmpty(value) || regexp.test(value), value);
-    };
     match = pattern.match(/^\/(.*)\/([gim]*)$/);
     if (match) {
       pattern = new RegExp(match[1], match[2]);
       patternValidator = function(value) {
-        return validateRegex(pattern, value);
+        return validate(pattern, value);
       };
     } else {
       patternValidator = function(value) {
@@ -16283,7 +17163,7 @@ function textInputType(scope, element, attr, ctrl, $sniffer, $browser) {
             'Expected {0} to be a RegExp but was {1}. Element: {2}', pattern,
             patternObj, startingTag(element));
         }
-        return validateRegex(patternObj, value);
+        return validate(patternObj, value);
       };
     }
 
@@ -16295,7 +17175,13 @@ function textInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   if (attr.ngMinlength) {
     var minlength = int(attr.ngMinlength);
     var minLengthValidator = function(value) {
-      return validate(ctrl, 'minlength', ctrl.$isEmpty(value) || value.length >= minlength, value);
+      if (!ctrl.$isEmpty(value) && value.length < minlength) {
+        ctrl.$setValidity('minlength', false);
+        return undefined;
+      } else {
+        ctrl.$setValidity('minlength', true);
+        return value;
+      }
     };
 
     ctrl.$parsers.push(minLengthValidator);
@@ -16306,7 +17192,13 @@ function textInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   if (attr.ngMaxlength) {
     var maxlength = int(attr.ngMaxlength);
     var maxLengthValidator = function(value) {
-      return validate(ctrl, 'maxlength', ctrl.$isEmpty(value) || value.length <= maxlength, value);
+      if (!ctrl.$isEmpty(value) && value.length > maxlength) {
+        ctrl.$setValidity('maxlength', false);
+        return undefined;
+      } else {
+        ctrl.$setValidity('maxlength', true);
+        return value;
+      }
     };
 
     ctrl.$parsers.push(maxLengthValidator);
@@ -16335,7 +17227,13 @@ function numberInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   if (attr.min) {
     var minValidator = function(value) {
       var min = parseFloat(attr.min);
-      return validate(ctrl, 'min', ctrl.$isEmpty(value) || value >= min, value);
+      if (!ctrl.$isEmpty(value) && value < min) {
+        ctrl.$setValidity('min', false);
+        return undefined;
+      } else {
+        ctrl.$setValidity('min', true);
+        return value;
+      }
     };
 
     ctrl.$parsers.push(minValidator);
@@ -16345,7 +17243,13 @@ function numberInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   if (attr.max) {
     var maxValidator = function(value) {
       var max = parseFloat(attr.max);
-      return validate(ctrl, 'max', ctrl.$isEmpty(value) || value <= max, value);
+      if (!ctrl.$isEmpty(value) && value > max) {
+        ctrl.$setValidity('max', false);
+        return undefined;
+      } else {
+        ctrl.$setValidity('max', true);
+        return value;
+      }
     };
 
     ctrl.$parsers.push(maxValidator);
@@ -16353,7 +17257,14 @@ function numberInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   }
 
   ctrl.$formatters.push(function(value) {
-    return validate(ctrl, 'number', ctrl.$isEmpty(value) || isNumber(value), value);
+
+    if (ctrl.$isEmpty(value) || isNumber(value)) {
+      ctrl.$setValidity('number', true);
+      return value;
+    } else {
+      ctrl.$setValidity('number', false);
+      return undefined;
+    }
   });
 }
 
@@ -16361,7 +17272,13 @@ function urlInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   textInputType(scope, element, attr, ctrl, $sniffer, $browser);
 
   var urlValidator = function(value) {
-    return validate(ctrl, 'url', ctrl.$isEmpty(value) || URL_REGEXP.test(value), value);
+    if (ctrl.$isEmpty(value) || URL_REGEXP.test(value)) {
+      ctrl.$setValidity('url', true);
+      return value;
+    } else {
+      ctrl.$setValidity('url', false);
+      return undefined;
+    }
   };
 
   ctrl.$formatters.push(urlValidator);
@@ -16372,7 +17289,13 @@ function emailInputType(scope, element, attr, ctrl, $sniffer, $browser) {
   textInputType(scope, element, attr, ctrl, $sniffer, $browser);
 
   var emailValidator = function(value) {
-    return validate(ctrl, 'email', ctrl.$isEmpty(value) || EMAIL_REGEXP.test(value), value);
+    if (ctrl.$isEmpty(value) || EMAIL_REGEXP.test(value)) {
+      ctrl.$setValidity('email', true);
+      return value;
+    } else {
+      ctrl.$setValidity('email', false);
+      return undefined;
+    }
   };
 
   ctrl.$formatters.push(emailValidator);
@@ -16516,59 +17439,44 @@ function checkboxInputType(scope, element, attr, ctrl) {
          <tt>myForm.$error.maxlength = {{!!myForm.$error.maxlength}}</tt><br>
        </div>
       </doc:source>
-      <doc:protractor>
-        var user = element(by.binding('{{user}}'));
-        var userNameValid = element(by.binding('myForm.userName.$valid'));
-        var lastNameValid = element(by.binding('myForm.lastName.$valid'));
-        var lastNameError = element(by.binding('myForm.lastName.$error'));
-        var formValid = element(by.binding('myForm.$valid'));
-        var userNameInput = element(by.model('user.name'));
-        var userLastInput = element(by.model('user.last'));
-
+      <doc:scenario>
         it('should initialize to model', function() {
-          expect(user.getText()).toContain('{"name":"guest","last":"visitor"}');
-          expect(userNameValid.getText()).toContain('true');
-          expect(formValid.getText()).toContain('true');
+          expect(binding('user')).toEqual('{"name":"guest","last":"visitor"}');
+          expect(binding('myForm.userName.$valid')).toEqual('true');
+          expect(binding('myForm.$valid')).toEqual('true');
         });
 
         it('should be invalid if empty when required', function() {
-          userNameInput.clear();
-          userNameInput.sendKeys('');
-
-          expect(user.getText()).toContain('{"last":"visitor"}');
-          expect(userNameValid.getText()).toContain('false');
-          expect(formValid.getText()).toContain('false');
+          input('user.name').enter('');
+          expect(binding('user')).toEqual('{"last":"visitor"}');
+          expect(binding('myForm.userName.$valid')).toEqual('false');
+          expect(binding('myForm.$valid')).toEqual('false');
         });
 
         it('should be valid if empty when min length is set', function() {
-          userLastInput.clear();
-          userLastInput.sendKeys('');
-
-          expect(user.getText()).toContain('{"name":"guest","last":""}');
-          expect(lastNameValid.getText()).toContain('true');
-          expect(formValid.getText()).toContain('true');
+          input('user.last').enter('');
+          expect(binding('user')).toEqual('{"name":"guest","last":""}');
+          expect(binding('myForm.lastName.$valid')).toEqual('true');
+          expect(binding('myForm.$valid')).toEqual('true');
         });
 
         it('should be invalid if less than required min length', function() {
-          userLastInput.clear();
-          userLastInput.sendKeys('xx');
-
-          expect(user.getText()).toContain('{"name":"guest"}');
-          expect(lastNameValid.getText()).toContain('false');
-          expect(lastNameError.getText()).toContain('minlength');
-          expect(formValid.getText()).toContain('false');
+          input('user.last').enter('xx');
+          expect(binding('user')).toEqual('{"name":"guest"}');
+          expect(binding('myForm.lastName.$valid')).toEqual('false');
+          expect(binding('myForm.lastName.$error')).toMatch(/minlength/);
+          expect(binding('myForm.$valid')).toEqual('false');
         });
 
         it('should be invalid if longer than max length', function() {
-          userLastInput.clear();
-          userLastInput.sendKeys('some ridiculously long name');
-
-          expect(user.getText()).toContain('{"name":"guest"}');
-          expect(lastNameValid.getText()).toContain('false');
-          expect(lastNameError.getText()).toContain('maxlength');
-          expect(formValid.getText()).toContain('false');
+          input('user.last').enter('some ridiculously long name');
+          expect(binding('user'))
+            .toEqual('{"name":"guest"}');
+          expect(binding('myForm.lastName.$valid')).toEqual('false');
+          expect(binding('myForm.lastName.$error')).toMatch(/maxlength/);
+          expect(binding('myForm.$valid')).toEqual('false');
         });
-      </doc:protractor>
+      </doc:scenario>
     </doc:example>
  */
 var inputDirective = ['$browser', '$sniffer', function($browser, $sniffer) {
@@ -16700,23 +17608,14 @@ var VALID_CLASS = 'ng-valid',
        <textarea ng-model="userContent"></textarea>
       </form>
     </file>
-    <file name="protractorTest.js">
+    <file name="scenario.js">
       it('should data-bind and become invalid', function() {
-        if (browser.params.browser = 'safari') {
-          // SafariDriver can't handle contenteditable.
-          return;
-        };
-        var contentEditable = element(by.css('.doc-example-live [contenteditable]'));
+        var contentEditable = element('[contenteditable]');
 
-        expect(contentEditable.getText()).toEqual('Change me!');
-
-        // Firefox driver doesn't trigger the proper events on 'clear', so do this hack
-        contentEditable.click();
-        contentEditable.sendKeys(protractor.Key.chord(protractor.Key.COMMAND, "a"));
-        contentEditable.sendKeys(protractor.Key.BACK_SPACE);
-
-        expect(contentEditable.getText()).toEqual('');
-        expect(contentEditable.getAttribute('class')).toMatch(/ng-invalid-required/);
+        expect(contentEditable.text()).toEqual('Change me!');
+        input('userContent').enter('');
+        expect(contentEditable.text()).toEqual('');
+        expect(contentEditable.prop('className')).toMatch(/ng-invalid-required/);
       });
     </file>
  * </example>
@@ -16769,9 +17668,6 @@ var NgModelController = ['$scope', '$exceptionHandler', '$attrs', '$element', '$
    * You can override this for input directives whose concept of being empty is different to the
    * default. The `checkboxInputType` directive does this because in its case a value of `false`
    * implies empty.
-   * 
-   * @param {*} value Reference to check.
-   * @returns {boolean} True if `value` is empty.
    */
   this.$isEmpty = function(value) {
     return isUndefined(value) || value === '' || value === null || value !== value;
@@ -16999,10 +17895,7 @@ var ngModelDirective = function() {
  * @name ng.directive:ngChange
  *
  * @description
- * Evaluate the given expression when the user changes the input.
- * The expression is evaluated immediately, unlike the JavaScript onchange event
- * which only triggers at the end of a change (usually, when the user leaves the
- * form element or presses the return key).
+ * Evaluate given expression when user changes the input.
  * The expression is not evaluated when the value change is coming from the model.
  *
  * Note, this directive requires `ngModel` to be present.
@@ -17026,30 +17919,24 @@ var ngModelDirective = function() {
  *       <input type="checkbox" ng-model="confirmed" ng-change="change()" id="ng-change-example1" />
  *       <input type="checkbox" ng-model="confirmed" id="ng-change-example2" />
  *       <label for="ng-change-example2">Confirmed</label><br />
- *       <tt>debug = {{confirmed}}</tt><br/>
- *       <tt>counter = {{counter}}</tt><br/>
+ *       debug = {{confirmed}}<br />
+ *       counter = {{counter}}
  *     </div>
  *   </doc:source>
- *   <doc:protractor>
- *     var counter = element(by.binding('counter'));
- *     var debug = element(by.binding('confirmed'));
- *
+ *   <doc:scenario>
  *     it('should evaluate the expression if changing from view', function() {
- *       expect(counter.getText()).toContain('0');
- *
- *       element(by.id('ng-change-example1')).click();
- *
- *       expect(counter.getText()).toContain('1');
- *       expect(debug.getText()).toContain('true');
+ *       expect(binding('counter')).toEqual('0');
+ *       element('#ng-change-example1').click();
+ *       expect(binding('counter')).toEqual('1');
+ *       expect(binding('confirmed')).toEqual('true');
  *     });
  *
  *     it('should not evaluate the expression if changing from model', function() {
- *       element(by.id('ng-change-example2')).click();
-
- *       expect(counter.getText()).toContain('0');
- *       expect(debug.getText()).toContain('true');
+ *       element('#ng-change-example2').click();
+ *       expect(binding('counter')).toEqual('0');
+ *       expect(binding('confirmed')).toEqual('true');
  *     });
- *   </doc:protractor>
+ *   </doc:scenario>
  * </doc:example>
  */
 var ngChangeDirective = valueFn({
@@ -17122,26 +18009,20 @@ var requiredDirective = function() {
          <tt>myForm.$error.required = {{!!myForm.$error.required}}</tt><br/>
         </form>
       </doc:source>
-      <doc:protractor>
-        var listInput = element(by.model('names'));
-        var names = element(by.binding('{{names}}'));
-        var valid = element(by.binding('myForm.namesInput.$valid'));
-        var error = element(by.css('span.error'));
-
+      <doc:scenario>
         it('should initialize to model', function() {
-          expect(names.getText()).toContain('["igor","misko","vojta"]');
-          expect(valid.getText()).toContain('true');
-          expect(error.getCssValue('display')).toBe('none');
+          expect(binding('names')).toEqual('["igor","misko","vojta"]');
+          expect(binding('myForm.namesInput.$valid')).toEqual('true');
+          expect(element('span.error').css('display')).toBe('none');
         });
 
         it('should be invalid if empty', function() {
-          listInput.clear();
-          listInput.sendKeys('');
-
-          expect(names.getText()).toContain('');
-          expect(valid.getText()).toContain('false');
-          expect(error.getCssValue('display')).not.toBe('none');        });
-      </doc:protractor>
+          input('names').enter('');
+          expect(binding('names')).toEqual('');
+          expect(binding('myForm.namesInput.$valid')).toEqual('false');
+          expect(element('span.error').css('display')).not().toBe('none');
+        });
+      </doc:scenario>
     </doc:example>
  */
 var ngListDirective = function() {
@@ -17223,17 +18104,15 @@ var CONSTANT_VALUE_REGEXP = /^(true|false|\d+)$/;
           <div>You chose {{my.favorite}}</div>
         </form>
       </doc:source>
-      <doc:protractor>
-        var favorite = element(by.binding('my.favorite'));
-
+      <doc:scenario>
         it('should initialize to model', function() {
-          expect(favorite.getText()).toContain('unicorns');
+          expect(binding('my.favorite')).toEqual('unicorns');
         });
         it('should bind the values to the inputs', function() {
-          element.all(by.model('my.favorite')).get(0).click();
-          expect(favorite.getText()).toContain('pizza');
+          input('my.favorite').select('pizza');
+          expect(binding('my.favorite')).toEqual('pizza');
         });
-      </doc:protractor>
+      </doc:scenario>
     </doc:example>
  */
 var ngValueDirective = function() {
@@ -17293,17 +18172,13 @@ var ngValueDirective = function() {
          Hello <span ng-bind="name"></span>!
        </div>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should check ng-bind', function() {
-         var exampleContainer = $('.doc-example-live');
-         var nameInput = element(by.model('name'));
-
-         expect(exampleContainer.findElement(by.binding('name')).getText()).toBe('Whirled');
-         nameInput.clear();
-         nameInput.sendKeys('world');
-         expect(exampleContainer.findElement(by.binding('name')).getText()).toBe('world');
+         expect(using('.doc-example-live').binding('name')).toBe('Whirled');
+         using('.doc-example-live').input('name').enter('world');
+         expect(using('.doc-example-live').binding('name')).toBe('world');
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  */
 var ngBindDirective = ngDirective(function(scope, element, attr) {
@@ -17349,22 +18224,20 @@ var ngBindDirective = ngDirective(function(scope, element, attr) {
         <pre ng-bind-template="{{salutation}} {{name}}!"></pre>
        </div>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should check ng-bind', function() {
-         var salutationElem = element(by.binding('salutation'));
-         var salutationInput = element(by.model('salutation'));
-         var nameInput = element(by.model('name'));
-
-         expect(salutationElem.getText()).toBe('Hello World!');
-
-         salutationInput.clear();
-         salutationInput.sendKeys('Greetings');
-         nameInput.clear();
-         nameInput.sendKeys('user');
-
-         expect(salutationElem.getText()).toBe('Greetings user!');
+         expect(using('.doc-example-live').binding('salutation')).
+           toBe('Hello');
+         expect(using('.doc-example-live').binding('name')).
+           toBe('World');
+         using('.doc-example-live').input('salutation').enter('Greetings');
+         using('.doc-example-live').input('name').enter('user');
+         expect(using('.doc-example-live').binding('salutation')).
+           toBe('Greetings');
+         expect(using('.doc-example-live').binding('name')).
+           toBe('user');
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  */
 var ngBindTemplateDirective = ['$interpolate', function($interpolate) {
@@ -17417,10 +18290,12 @@ var ngBindTemplateDirective = ['$interpolate', function($interpolate) {
        }]);
      </file>
 
-     <file name="protractorTest.js">
+     <file name="scenario.js">
        it('should check ng-bind-html', function() {
-         expect(element(by.binding('myHTML')).getText()).toBe(
-             'I am an HTMLstring with links! and other stuff');
+         expect(using('.doc-example-live').binding('myHTML')).
+           toBe(
+           'I am an <code>HTML</code>string with <a href="#">links!</a> and other <em>stuff</em>'
+           );
        });
      </file>
    </example>
@@ -17552,34 +18427,31 @@ function classDirective(name, selector) {
            color: red;
        }
      </file>
-     <file name="protractorTest.js">
-       var ps = element.all(by.css('.doc-example-live p'));
-
+     <file name="scenario.js">
        it('should let you toggle the class', function() {
 
-         expect(ps.first().getAttribute('class')).not.toMatch(/bold/);
-         expect(ps.first().getAttribute('class')).not.toMatch(/red/);
+         expect(element('.doc-example-live p:first').prop('className')).not().toMatch(/bold/);
+         expect(element('.doc-example-live p:first').prop('className')).not().toMatch(/red/);
 
-         element(by.model('important')).click();
-         expect(ps.first().getAttribute('class')).toMatch(/bold/);
+         input('important').check();
+         expect(element('.doc-example-live p:first').prop('className')).toMatch(/bold/);
 
-         element(by.model('error')).click();
-         expect(ps.first().getAttribute('class')).toMatch(/red/);
+         input('error').check();
+         expect(element('.doc-example-live p:first').prop('className')).toMatch(/red/);
        });
 
        it('should let you toggle string example', function() {
-         expect(ps.get(1).getAttribute('class')).toBe('');
-         element(by.model('style')).clear();
-         element(by.model('style')).sendKeys('red');
-         expect(ps.get(1).getAttribute('class')).toBe('red');
+         expect(element('.doc-example-live p:nth-of-type(2)').prop('className')).toBe('');
+         input('style').enter('red');
+         expect(element('.doc-example-live p:nth-of-type(2)').prop('className')).toBe('red');
        });
 
        it('array example should have 3 classes', function() {
-         expect(ps.last().getAttribute('class')).toBe('');
-         element(by.model('style1')).sendKeys('bold');
-         element(by.model('style2')).sendKeys('strike');
-         element(by.model('style3')).sendKeys('red');
-         expect(ps.last().getAttribute('class')).toBe('bold strike red');
+         expect(element('.doc-example-live p:last').prop('className')).toBe('');
+         input('style1').enter('bold');
+         input('style2').enter('strike');
+         input('style3').enter('red');
+         expect(element('.doc-example-live p:last').prop('className')).toBe('bold strike red');
        });
      </file>
    </example>
@@ -17590,8 +18462,8 @@ function classDirective(name, selector) {
 
    <example animations="true">
      <file name="index.html">
-      <input id="setbtn" type="button" value="set" ng-click="myVar='my-class'">
-      <input id="clearbtn" type="button" value="clear" ng-click="myVar=''">
+      <input type="button" value="set" ng-click="myVar='my-class'">
+      <input type="button" value="clear" ng-click="myVar=''">
       <br>
       <span class="base-class" ng-class="myVar">Sample Text</span>
      </file>
@@ -17606,19 +18478,19 @@ function classDirective(name, selector) {
          font-size:3em;
        }
      </file>
-     <file name="protractorTest.js">
+     <file name="scenario.js">
        it('should check ng-class', function() {
-         expect(element(by.css('.base-class')).getAttribute('class')).not.
+         expect(element('.doc-example-live span').prop('className')).not().
            toMatch(/my-class/);
 
-         element(by.id('setbtn')).click();
+         using('.doc-example-live').element(':button:first').click();
 
-         expect(element(by.css('.base-class')).getAttribute('class')).
+         expect(element('.doc-example-live span').prop('className')).
            toMatch(/my-class/);
 
-         element(by.id('clearbtn')).click();
+         using('.doc-example-live').element(':button:last').click();
 
-         expect(element(by.css('.base-class')).getAttribute('class')).not.
+         expect(element('.doc-example-live span').prop('className')).not().
            toMatch(/my-class/);
        });
      </file>
@@ -17670,11 +18542,11 @@ var ngClassDirective = classDirective('', true);
          color: blue;
        }
      </file>
-     <file name="protractorTest.js">
+     <file name="scenario.js">
        it('should check ng-class-odd and ng-class-even', function() {
-         expect(element(by.repeater('name in names').row(0).column('name')).getAttribute('class')).
+         expect(element('.doc-example-live li:first span').prop('className')).
            toMatch(/odd/);
-         expect(element(by.repeater('name in names').row(1).column('name')).getAttribute('class')).
+         expect(element('.doc-example-live li:last span').prop('className')).
            toMatch(/even/);
        });
      </file>
@@ -17718,11 +18590,11 @@ var ngClassOddDirective = classDirective('Odd', 0);
          color: blue;
        }
      </file>
-     <file name="protractorTest.js">
+     <file name="scenario.js">
        it('should check ng-class-odd and ng-class-even', function() {
-         expect(element(by.repeater('name in names').row(0).column('name')).getAttribute('class')).
+         expect(element('.doc-example-live li:first span').prop('className')).
            toMatch(/odd/);
-         expect(element(by.repeater('name in names').row(1).column('name')).getAttribute('class')).
+         expect(element('.doc-example-live li:last span').prop('className')).
            toMatch(/even/);
        });
      </file>
@@ -17775,14 +18647,14 @@ var ngClassEvenDirective = classDirective('Even', 1);
         <div id="template1" ng-cloak>{{ 'hello' }}</div>
         <div id="template2" ng-cloak class="ng-cloak">{{ 'hello IE7' }}</div>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should remove the template directive and css class', function() {
-         expect($('.doc-example-live #template1').getAttribute('ng-cloak')).
-           toBeNull();
-         expect($('.doc-example-live #template2').getAttribute('ng-cloak')).
-           toBeNull();
+         expect(element('.doc-example-live #template1').attr('ng-cloak')).
+           not().toBeDefined();
+         expect(element('.doc-example-live #template2').attr('ng-cloak')).
+           not().toBeDefined();
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  *
  */
@@ -17875,36 +18747,22 @@ var ngCloakDirective = ngDirective({
        </ul>
       </div>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should check controller as', function() {
-         var container = element(by.id('ctrl-as-exmpl'));
+         expect(element('#ctrl-as-exmpl>:input').val()).toBe('John Smith');
+         expect(element('#ctrl-as-exmpl li:nth-child(1) input').val())
+           .toBe('408 555 1212');
+         expect(element('#ctrl-as-exmpl li:nth-child(2) input').val())
+           .toBe('john.smith@example.org');
 
-         expect(container.findElement(by.model('settings.name'))
-             .getAttribute('value')).toBe('John Smith');
+         element('#ctrl-as-exmpl li:first a:contains("clear")').click();
+         expect(element('#ctrl-as-exmpl li:first input').val()).toBe('');
 
-         var firstRepeat =
-             container.findElement(by.repeater('contact in settings.contacts').row(0));
-         var secondRepeat =
-             container.findElement(by.repeater('contact in settings.contacts').row(1));
-
-         expect(firstRepeat.findElement(by.model('contact.value')).getAttribute('value'))
-             .toBe('408 555 1212');
-         expect(secondRepeat.findElement(by.model('contact.value')).getAttribute('value'))
-             .toBe('john.smith@example.org');
-
-         firstRepeat.findElement(by.linkText('clear')).click()
-
-         expect(firstRepeat.findElement(by.model('contact.value')).getAttribute('value'))
-             .toBe('');
-
-         container.findElement(by.linkText('add')).click();
-
-         expect(container.findElement(by.repeater('contact in settings.contacts').row(2))
-             .findElement(by.model('contact.value'))
-             .getAttribute('value'))
-             .toBe('yourname@example.org');
+         element('#ctrl-as-exmpl li:last a:contains("add")').click();
+         expect(element('#ctrl-as-exmpl li:nth-child(3) input').val())
+           .toBe('yourname@example.org');
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
     <doc:example>
      <doc:source>
@@ -17952,36 +18810,22 @@ var ngCloakDirective = ngDirective({
        </ul>
       </div>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should check controller', function() {
-         var container = element(by.id('ctrl-exmpl'));
+         expect(element('#ctrl-exmpl>:input').val()).toBe('John Smith');
+         expect(element('#ctrl-exmpl li:nth-child(1) input').val())
+           .toBe('408 555 1212');
+         expect(element('#ctrl-exmpl li:nth-child(2) input').val())
+           .toBe('john.smith@example.org');
 
-         expect(container.findElement(by.model('name'))
-             .getAttribute('value')).toBe('John Smith');
+         element('#ctrl-exmpl li:first a:contains("clear")').click();
+         expect(element('#ctrl-exmpl li:first input').val()).toBe('');
 
-         var firstRepeat =
-             container.findElement(by.repeater('contact in contacts').row(0));
-         var secondRepeat =
-             container.findElement(by.repeater('contact in contacts').row(1));
-
-         expect(firstRepeat.findElement(by.model('contact.value')).getAttribute('value'))
-             .toBe('408 555 1212');
-         expect(secondRepeat.findElement(by.model('contact.value')).getAttribute('value'))
-             .toBe('john.smith@example.org');
-
-         firstRepeat.findElement(by.linkText('clear')).click()
-
-         expect(firstRepeat.findElement(by.model('contact.value')).getAttribute('value'))
-             .toBe('');
-
-         container.findElement(by.linkText('add')).click();
-
-         expect(container.findElement(by.repeater('contact in contacts').row(2))
-             .findElement(by.model('contact.value'))
-             .getAttribute('value'))
-             .toBe('yourname@example.org');
+         element('#ctrl-exmpl li:last a:contains("add")').click();
+         expect(element('#ctrl-exmpl li:nth-child(3) input').val())
+           .toBe('yourname@example.org');
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
 
  */
@@ -18044,7 +18888,6 @@ var ngControllerDirective = [function() {
  * an element is clicked.
  *
  * @element ANY
- * @priority 0
  * @param {expression} ngClick {@link guide/expression Expression} to evaluate upon
  * click. (Event object is available as `$event`)
  *
@@ -18056,13 +18899,13 @@ var ngControllerDirective = [function() {
       </button>
       count: {{count}}
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should check ng-click', function() {
-         expect(element(by.binding('count')).getText()).toMatch('0');
-         element(by.css('.doc-example-live button')).click();
-         expect(element(by.binding('count')).getText()).toMatch('1');
+         expect(binding('count')).toBe('0');
+         element('.doc-example-live :button').click();
+         expect(binding('count')).toBe('1');
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  */
 /*
@@ -18101,7 +18944,6 @@ forEach(
  * The `ngDblclick` directive allows you to specify custom behavior on a dblclick event.
  *
  * @element ANY
- * @priority 0
  * @param {expression} ngDblclick {@link guide/expression Expression} to evaluate upon
  * a dblclick. (The Event object is available as `$event`)
  *
@@ -18125,7 +18967,6 @@ forEach(
  * The ngMousedown directive allows you to specify custom behavior on mousedown event.
  *
  * @element ANY
- * @priority 0
  * @param {expression} ngMousedown {@link guide/expression Expression} to evaluate upon
  * mousedown. (Event object is available as `$event`)
  *
@@ -18149,7 +18990,6 @@ forEach(
  * Specify custom behavior on mouseup event.
  *
  * @element ANY
- * @priority 0
  * @param {expression} ngMouseup {@link guide/expression Expression} to evaluate upon
  * mouseup. (Event object is available as `$event`)
  *
@@ -18172,7 +19012,6 @@ forEach(
  * Specify custom behavior on mouseover event.
  *
  * @element ANY
- * @priority 0
  * @param {expression} ngMouseover {@link guide/expression Expression} to evaluate upon
  * mouseover. (Event object is available as `$event`)
  *
@@ -18196,7 +19035,6 @@ forEach(
  * Specify custom behavior on mouseenter event.
  *
  * @element ANY
- * @priority 0
  * @param {expression} ngMouseenter {@link guide/expression Expression} to evaluate upon
  * mouseenter. (Event object is available as `$event`)
  *
@@ -18220,7 +19058,6 @@ forEach(
  * Specify custom behavior on mouseleave event.
  *
  * @element ANY
- * @priority 0
  * @param {expression} ngMouseleave {@link guide/expression Expression} to evaluate upon
  * mouseleave. (Event object is available as `$event`)
  *
@@ -18244,7 +19081,6 @@ forEach(
  * Specify custom behavior on mousemove event.
  *
  * @element ANY
- * @priority 0
  * @param {expression} ngMousemove {@link guide/expression Expression} to evaluate upon
  * mousemove. (Event object is available as `$event`)
  *
@@ -18268,7 +19104,6 @@ forEach(
  * Specify custom behavior on keydown event.
  *
  * @element ANY
- * @priority 0
  * @param {expression} ngKeydown {@link guide/expression Expression} to evaluate upon
  * keydown. (Event object is available as `$event` and can be interrogated for keyCode, altKey, etc.)
  *
@@ -18290,7 +19125,6 @@ forEach(
  * Specify custom behavior on keyup event.
  *
  * @element ANY
- * @priority 0
  * @param {expression} ngKeyup {@link guide/expression Expression} to evaluate upon
  * keyup. (Event object is available as `$event` and can be interrogated for keyCode, altKey, etc.)
  *
@@ -18333,11 +19167,10 @@ forEach(
  * Enables binding angular expressions to onsubmit events.
  *
  * Additionally it prevents the default action (which for form means sending the request to the
- * server and reloading the current page), but only if the form does not contain `action`,
- * `data-action`, or `x-action` attributes.
+ * server and reloading the current page) **but only if the form does not contain an `action`
+ * attribute**.
  *
  * @element form
- * @priority 0
  * @param {expression} ngSubmit {@link guide/expression Expression} to eval. (Event object is available as `$event`)
  *
  * @example
@@ -18362,20 +19195,20 @@ forEach(
         <pre>list={{list}}</pre>
       </form>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should check ng-submit', function() {
-         expect(element(by.binding('list')).getText()).toBe('list=[]');
-         element(by.css('.doc-example-live #submit')).click();
-         expect(element(by.binding('list')).getText()).toContain('hello');
-         expect(element(by.input('text')).getAttribute('value')).toBe('');
+         expect(binding('list')).toBe('[]');
+         element('.doc-example-live #submit').click();
+         expect(binding('list')).toBe('["hello"]');
+         expect(input('text').val()).toBe('');
        });
        it('should ignore empty strings', function() {
-         expect(element(by.binding('list')).getText()).toBe('list=[]');
-         element(by.css('.doc-example-live #submit')).click();
-         element(by.css('.doc-example-live #submit')).click();
-         expect(element(by.binding('list')).getText()).toContain('hello');
-        });
-     </doc:protractor>
+         expect(binding('list')).toBe('[]');
+         element('.doc-example-live #submit').click();
+         element('.doc-example-live #submit').click();
+         expect(binding('list')).toBe('["hello"]');
+       });
+     </doc:scenario>
    </doc:example>
  */
 
@@ -18387,7 +19220,6 @@ forEach(
  * Specify custom behavior on focus event.
  *
  * @element window, input, select, textarea, a
- * @priority 0
  * @param {expression} ngFocus {@link guide/expression Expression} to evaluate upon
  * focus. (Event object is available as `$event`)
  *
@@ -18403,7 +19235,6 @@ forEach(
  * Specify custom behavior on blur event.
  *
  * @element window, input, select, textarea, a
- * @priority 0
  * @param {expression} ngBlur {@link guide/expression Expression} to evaluate upon
  * blur. (Event object is available as `$event`)
  *
@@ -18419,7 +19250,6 @@ forEach(
  * Specify custom behavior on copy event.
  *
  * @element window, input, select, textarea, a
- * @priority 0
  * @param {expression} ngCopy {@link guide/expression Expression} to evaluate upon
  * copy. (Event object is available as `$event`)
  *
@@ -18440,7 +19270,6 @@ forEach(
  * Specify custom behavior on cut event.
  *
  * @element window, input, select, textarea, a
- * @priority 0
  * @param {expression} ngCut {@link guide/expression Expression} to evaluate upon
  * cut. (Event object is available as `$event`)
  *
@@ -18461,7 +19290,6 @@ forEach(
  * Specify custom behavior on paste event.
  *
  * @element window, input, select, textarea, a
- * @priority 0
  * @param {expression} ngPaste {@link guide/expression Expression} to evaluate upon
  * paste. (Event object is available as `$event`)
  *
@@ -18702,33 +19530,19 @@ var ngIfDirective = ['$animate', function($animate) {
         top:50px;
       }
     </file>
-    <file name="protractorTest.js">
-      var templateSelect = element(by.model('template'));
-      var includeElem = element(by.css('.doc-example-live [ng-include]'));
-
+    <file name="scenario.js">
       it('should load template1.html', function() {
-        expect(includeElem.getText()).toMatch(/Content of template1.html/);
+       expect(element('.doc-example-live [ng-include]').text()).
+         toMatch(/Content of template1.html/);
       });
-
       it('should load template2.html', function() {
-        if (browser.params.browser == 'firefox') {
-          // Firefox can't handle using selects
-          // See https://github.com/angular/protractor/issues/480
-          return;
-        }
-        templateSelect.click();
-        templateSelect.element.all(by.css('option')).get(2).click();
-        expect(includeElem.getText()).toMatch(/Content of template2.html/);
+       select('template').option('1');
+       expect(element('.doc-example-live [ng-include]').text()).
+         toMatch(/Content of template2.html/);
       });
-
       it('should change to blank', function() {
-        if (browser.params.browser == 'firefox') {
-          // Firefox can't handle using selects
-          return;
-        }
-        templateSelect.click();
-        templateSelect.element.all(by.css('option')).get(0).click();
-        expect(includeElem.isPresent()).toBe(false);
+       select('template').option('');
+       expect(element('.doc-example-live [ng-include]')).toBe(undefined);
       });
     </file>
   </example>
@@ -18859,13 +19673,6 @@ var ngIncludeFillContentDirective = ['$compile',
  * should use {@link guide/controller controllers} rather than `ngInit`
  * to initialize values on a scope.
  * </div>
- * <div class="alert alert-warning">
- * **Note**: If you have assignment in `ngInit` along with {@link api/ng.$filter `$filter`}, make
- * sure you have parenthesis for correct precedence:
- * <pre class="prettyprint">
- *   <div ng-init="test1 = (data | orderBy:'name')"></div>
- * </pre>
- * </div>
  *
  * @priority 450
  *
@@ -18888,15 +19695,15 @@ var ngIncludeFillContentDirective = ['$compile',
      </div>
    </div>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
        it('should alias index positions', function() {
-         var elements = element.all(by.css('.example-init'));
-         expect(elements.get(0).getText()).toBe('list[ 0 ][ 0 ] = a;');
-         expect(elements.get(1).getText()).toBe('list[ 0 ][ 1 ] = b;');
-         expect(elements.get(2).getText()).toBe('list[ 1 ][ 0 ] = c;');
-         expect(elements.get(3).getText()).toBe('list[ 1 ][ 1 ] = d;');
+         expect(element('.example-init').text())
+           .toBe('list[ 0 ][ 0 ] = a;' +
+                 'list[ 0 ][ 1 ] = b;' +
+                 'list[ 1 ][ 0 ] = c;' +
+                 'list[ 1 ][ 1 ] = d;');
        });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  */
 var ngInitDirective = ngDirective({
@@ -18934,12 +19741,13 @@ var ngInitDirective = ngDirective({
         <div>Normal: {{1 + 2}}</div>
         <div ng-non-bindable>Ignored: {{1 + 2}}</div>
       </doc:source>
-      <doc:protractor>
+      <doc:scenario>
        it('should check ng-non-bindable', function() {
-         expect(element(by.binding('1 + 2')).getText()).toContain('3');
-         expect(element.all(by.css('.doc-example-live div')).last().getText()).toMatch(/1 \+ 2/);
+         expect(using('.doc-example-live').binding('1 + 2')).toBe('3');
+         expect(using('.doc-example-live').element('div:last').text()).
+           toMatch(/1 \+ 2/);
        });
-      </doc:protractor>
+      </doc:scenario>
     </doc:example>
  */
 var ngNonBindableDirective = ngDirective({ terminal: true, priority: 1000 });
@@ -19067,53 +19875,49 @@ var ngNonBindableDirective = ngDirective({ terminal: true, priority: 1000 });
           </ng-pluralize>
         </div>
       </doc:source>
-      <doc:protractor>
+      <doc:scenario>
         it('should show correct pluralized string', function() {
-          var withoutOffset = element.all(by.css('ng-pluralize')).get(0);
-          var withOffset = element.all(by.css('ng-pluralize')).get(1);
-          var countInput = element(by.model('personCount'));
+          expect(element('.doc-example-live ng-pluralize:first').text()).
+                                             toBe('1 person is viewing.');
+          expect(element('.doc-example-live ng-pluralize:last').text()).
+                                                toBe('Igor is viewing.');
 
-          expect(withoutOffset.getText()).toEqual('1 person is viewing.');
-          expect(withOffset.getText()).toEqual('Igor is viewing.');
+          using('.doc-example-live').input('personCount').enter('0');
+          expect(element('.doc-example-live ng-pluralize:first').text()).
+                                               toBe('Nobody is viewing.');
+          expect(element('.doc-example-live ng-pluralize:last').text()).
+                                              toBe('Nobody is viewing.');
 
-          countInput.clear();
-          countInput.sendKeys('0');
+          using('.doc-example-live').input('personCount').enter('2');
+          expect(element('.doc-example-live ng-pluralize:first').text()).
+                                            toBe('2 people are viewing.');
+          expect(element('.doc-example-live ng-pluralize:last').text()).
+                              toBe('Igor and Misko are viewing.');
 
-          expect(withoutOffset.getText()).toEqual('Nobody is viewing.');
-          expect(withOffset.getText()).toEqual('Nobody is viewing.');
+          using('.doc-example-live').input('personCount').enter('3');
+          expect(element('.doc-example-live ng-pluralize:first').text()).
+                                            toBe('3 people are viewing.');
+          expect(element('.doc-example-live ng-pluralize:last').text()).
+                              toBe('Igor, Misko and one other person are viewing.');
 
-          countInput.clear();
-          countInput.sendKeys('2');
-
-          expect(withoutOffset.getText()).toEqual('2 people are viewing.');
-          expect(withOffset.getText()).toEqual('Igor and Misko are viewing.');
-
-          countInput.clear();
-          countInput.sendKeys('3');
-
-          expect(withoutOffset.getText()).toEqual('3 people are viewing.');
-          expect(withOffset.getText()).toEqual('Igor, Misko and one other person are viewing.');
-
-          countInput.clear();
-          countInput.sendKeys('4');
-
-          expect(withoutOffset.getText()).toEqual('4 people are viewing.');
-          expect(withOffset.getText()).toEqual('Igor, Misko and 2 other people are viewing.');
+          using('.doc-example-live').input('personCount').enter('4');
+          expect(element('.doc-example-live ng-pluralize:first').text()).
+                                            toBe('4 people are viewing.');
+          expect(element('.doc-example-live ng-pluralize:last').text()).
+                              toBe('Igor, Misko and 2 other people are viewing.');
         });
-        it('should show data-bound names', function() {
-          var withOffset = element.all(by.css('ng-pluralize')).get(1);
-          var personCount = element(by.model('personCount'));
-          var person1 = element(by.model('person1'));
-          var person2 = element(by.model('person2'));
-          personCount.clear();
-          personCount.sendKeys('4');
-          person1.clear();
-          person1.sendKeys('Di');
-          person2.clear();
-          person2.sendKeys('Vojta');
-          expect(withOffset.getText()).toEqual('Di, Vojta and 2 other people are viewing.');
+
+        it('should show data-binded names', function() {
+          using('.doc-example-live').input('personCount').enter('4');
+          expect(element('.doc-example-live ng-pluralize:last').text()).
+              toBe('Igor, Misko and 2 other people are viewing.');
+
+          using('.doc-example-live').input('person1').enter('Di');
+          using('.doc-example-live').input('person2').enter('Vojta');
+          expect(element('.doc-example-live ng-pluralize:last').text()).
+              toBe('Di, Vojta and 2 other people are viewing.');
         });
-      </doc:protractor>
+      </doc:scenario>
     </doc:example>
  */
 var ngPluralizeDirective = ['$locale', '$interpolate', function($locale, $interpolate) {
@@ -19180,8 +19984,6 @@ var ngPluralizeDirective = ['$locale', '$interpolate', function($locale, $interp
  * | `$even`   | {@type boolean} | true if the iterator position `$index` is even (otherwise false).           |
  * | `$odd`    | {@type boolean} | true if the iterator position `$index` is odd (otherwise false).            |
  *
- * Creating aliases for these properties is possible with {@link api/ng.directive:ngInit `ngInit`}.
- * This may be useful when, for instance, nesting ngRepeats.
  *
  * # Special repeat start and end points
  * To repeat a series of elements instead of just one parent element, ngRepeat (as well as other ng directives) supports extending
@@ -19332,27 +20134,25 @@ var ngPluralizeDirective = ['$locale', '$interpolate', function($locale, $interp
         max-height:40px;
       }
     </file>
-    <file name="protractorTest.js">
-      var friends = element(by.css('.doc-example-live'))
-          .element.all(by.repeater('friend in friends'));
-
-      it('should render initial data set', function() {
-        expect(friends.count()).toBe(10);
-        expect(friends.get(0).getText()).toEqual('[1] John who is 25 years old.');
-        expect(friends.get(1).getText()).toEqual('[2] Jessie who is 30 years old.');
-        expect(friends.last().getText()).toEqual('[10] Samantha who is 60 years old.');
-        expect(element(by.binding('friends.length')).getText())
-            .toMatch("I have 10 friends. They are:");
-      });
+    <file name="scenario.js">
+       it('should render initial data set', function() {
+         var r = using('.doc-example-live').repeater('ul li');
+         expect(r.count()).toBe(10);
+         expect(r.row(0)).toEqual(["1","John","25"]);
+         expect(r.row(1)).toEqual(["2","Jessie","30"]);
+         expect(r.row(9)).toEqual(["10","Samantha","60"]);
+         expect(binding('friends.length')).toBe("10");
+       });
 
        it('should update repeater when filter predicate changes', function() {
-         expect(friends.count()).toBe(10);
+         var r = using('.doc-example-live').repeater('ul li');
+         expect(r.count()).toBe(10);
 
-         element(by.css('.doc-example-live')).element(by.model('q')).sendKeys('ma');
+         input('q').enter('ma');
 
-         expect(friends.count()).toBe(2);
-         expect(friends.get(0).getText()).toEqual('[1] Mary who is 28 years old.');
-         expect(friends.last().getText()).toEqual('[2] Samantha who is 60 years old.');
+         expect(r.count()).toBe(2);
+         expect(r.row(0)).toEqual(["1","Mary","28"]);
+         expect(r.row(1)).toEqual(["2","Samantha","60"]);
        });
       </file>
     </example>
@@ -19367,7 +20167,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
     $$tlb: true,
     link: function($scope, $element, $attr, ctrl, $transclude){
         var expression = $attr.ngRepeat;
-        var match = expression.match(/^\s*([\s\S]+?)\s+in\s+([\s\S]+?)(?:\s+track\s+by\s+([\s\S]+?))?\s*$/),
+        var match = expression.match(/^\s*(.+)\s+in\s+([\r\n\s\S]*?)\s*(\s+track\s+by\s+(.+)\s*)?$/),
           trackByExp, trackByExpGetter, trackByIdExpFn, trackByIdArrayFn, trackByIdObjFn,
           lhs, rhs, valueIdentifier, keyIdentifier,
           hashFnLocals = {$id: hashKey};
@@ -19379,7 +20179,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
 
         lhs = match[1];
         rhs = match[2];
-        trackByExp = match[3];
+        trackByExp = match[4];
 
         if (trackByExp) {
           trackByExpGetter = $parse(trackByExp);
@@ -19606,11 +20406,6 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  *
  * Just remember to include the important flag so the CSS override will function.
  *
- * <div class="alert alert-warning">
- * **Note:** Here is a list of values that ngShow will consider as a falsy value (case insensitive):<br />
- * "f" / "0" / "false" / "no" / "n" / "[]"
- * </div>
- * 
  * ## A note about animations with ngShow
  *
  * Animations in ngShow/ngHide work with the show and hide events that are triggered when the directive expression
@@ -19686,19 +20481,16 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
         background:white;
       }
     </file>
-    <file name="protractorTest.js">
-      var thumbsUp = element(by.css('.doc-example-live span.icon-thumbs-up'));
-      var thumbsDown = element(by.css('.doc-example-live span.icon-thumbs-down'));
+    <file name="scenario.js">
+       it('should check ng-show / ng-hide', function() {
+         expect(element('.doc-example-live span:first:hidden').count()).toEqual(1);
+         expect(element('.doc-example-live span:last:visible').count()).toEqual(1);
 
-      it('should check ng-show / ng-hide', function() {
-        expect(thumbsUp.isDisplayed()).toBeFalsy();
-        expect(thumbsDown.isDisplayed()).toBeTruthy();
+         input('checked').check();
 
-        element(by.model('checked')).click();
-
-        expect(thumbsUp.isDisplayed()).toBeTruthy();
-        expect(thumbsDown.isDisplayed()).toBeFalsy();
-      });
+         expect(element('.doc-example-live span:first:visible').count()).toEqual(1);
+         expect(element('.doc-example-live span:last:hidden').count()).toEqual(1);
+       });
     </file>
   </example>
  */
@@ -19762,11 +20554,6 @@ var ngShowDirective = ['$animate', function($animate) {
  * </pre>
  *
  * Just remember to include the important flag so the CSS override will function.
- * 
- * <div class="alert alert-warning">
- * **Note:** Here is a list of values that ngHide will consider as a falsy value (case insensitive):<br />
- * "f" / "0" / "false" / "no" / "n" / "[]"
- * </div>
  *
  * ## A note about animations with ngHide
  *
@@ -19843,19 +20630,16 @@ var ngShowDirective = ['$animate', function($animate) {
         background:white;
       }
     </file>
-    <file name="protractorTest.js">
-      var thumbsUp = element(by.css('.doc-example-live span.icon-thumbs-up'));
-      var thumbsDown = element(by.css('.doc-example-live span.icon-thumbs-down'));
+    <file name="scenario.js">
+       it('should check ng-show / ng-hide', function() {
+         expect(element('.doc-example-live .check-element:first:hidden').count()).toEqual(1);
+         expect(element('.doc-example-live .check-element:last:visible').count()).toEqual(1);
 
-      it('should check ng-show / ng-hide', function() {
-        expect(thumbsUp.isDisplayed()).toBeFalsy();
-        expect(thumbsDown.isDisplayed()).toBeTruthy();
+         input('checked').check();
 
-        element(by.model('checked')).click();
-
-        expect(thumbsUp.isDisplayed()).toBeTruthy();
-        expect(thumbsDown.isDisplayed()).toBeFalsy();
-      });
+         expect(element('.doc-example-live .check-element:first:visible').count()).toEqual(1);
+         expect(element('.doc-example-live .check-element:last:hidden').count()).toEqual(1);
+       });
     </file>
   </example>
  */
@@ -19894,15 +20678,13 @@ var ngHideDirective = ['$animate', function($animate) {
          color: black;
        }
      </file>
-     <file name="protractorTest.js">
-       var colorSpan = element(by.css('.doc-example-live span'));
-
+     <file name="scenario.js">
        it('should check ng-style', function() {
-         expect(colorSpan.getCssValue('color')).toBe('rgba(0, 0, 0, 1)');
-         element(by.css('.doc-example-live input[value=set]')).click();
-         expect(colorSpan.getCssValue('color')).toBe('rgba(255, 0, 0, 1)');
-         element(by.css('.doc-example-live input[value=clear]')).click();
-         expect(colorSpan.getCssValue('color')).toBe('rgba(0, 0, 0, 1)');
+         expect(element('.doc-example-live span').css('color')).toBe('rgb(0, 0, 0)');
+         element('.doc-example-live :button[value=set]').click();
+         expect(element('.doc-example-live span').css('color')).toBe('rgb(255, 0, 0)');
+         element('.doc-example-live :button[value=clear]').click();
+         expect(element('.doc-example-live span').css('color')).toBe('rgb(0, 0, 0)');
        });
      </file>
    </example>
@@ -19927,7 +20709,7 @@ var ngStyleDirective = ngDirective(function(scope, element, attr) {
  * as specified in the template.
  *
  * The directive itself works similar to ngInclude, however, instead of downloading template code (or loading it
- * from the template cache), `ngSwitch` simply chooses one of the nested elements and makes it visible based on which element
+ * from the template cache), `ngSwitch` simply choses one of the nested elements and makes it visible based on which element
  * matches the value obtained from the evaluated expression. In other words, you define a container element
  * (where you place the directive), place an expression on the **`on="..."` attribute**
  * (or the **`ng-switch="..."` attribute**), define any inner elements inside of the directive and place
@@ -20023,20 +20805,17 @@ var ngStyleDirective = ngDirective(function(scope, element, attr) {
         top:0;
       }
     </file>
-    <file name="protractorTest.js">
-      var switchElem = element(by.css('.doc-example-live [ng-switch]'));
-      var select = element(by.model('selection'));
-
+    <file name="scenario.js">
       it('should start in settings', function() {
-        expect(switchElem.getText()).toMatch(/Settings Div/);
+        expect(element('.doc-example-live [ng-switch]').text()).toMatch(/Settings Div/);
       });
       it('should change to home', function() {
-        select.element.all(by.css('option')).get(1).click();
-        expect(switchElem.getText()).toMatch(/Home Span/);
+        select('selection').option('home');
+        expect(element('.doc-example-live [ng-switch]').text()).toMatch(/Home Span/);
       });
       it('should select default', function() {
-        select.element.all(by.css('option')).get(2).click();
-        expect(switchElem.getText()).toMatch(/default/);
+        select('selection').option('other');
+        expect(element('.doc-example-live [ng-switch]').text()).toMatch(/default/);
       });
     </file>
   </example>
@@ -20087,9 +20866,11 @@ var ngSwitchWhenDirective = ngDirective({
   transclude: 'element',
   priority: 800,
   require: '^ngSwitch',
-  link: function(scope, element, attrs, ctrl, $transclude) {
-    ctrl.cases['!' + attrs.ngSwitchWhen] = (ctrl.cases['!' + attrs.ngSwitchWhen] || []);
-    ctrl.cases['!' + attrs.ngSwitchWhen].push({ transclude: $transclude, element: element });
+  compile: function(element, attrs) {
+    return function(scope, element, attr, ctrl, $transclude) {
+      ctrl.cases['!' + attrs.ngSwitchWhen] = (ctrl.cases['!' + attrs.ngSwitchWhen] || []);
+      ctrl.cases['!' + attrs.ngSwitchWhen].push({ transclude: $transclude, element: element });
+    };
   }
 });
 
@@ -20143,32 +20924,35 @@ var ngSwitchDefaultDirective = ngDirective({
          <pane title="{{title}}">{{text}}</pane>
        </div>
      </doc:source>
-     <doc:protractor>
+     <doc:scenario>
         it('should have transcluded', function() {
-          var titleElement = element(by.model('title'));
-          titleElement.clear();
-          titleElement.sendKeys('TITLE');
-          var textElement = element(by.model('text'));
-          textElement.clear();
-          textElement.sendKeys('TEXT');
-          expect(element(by.binding('title')).getText()).toEqual('TITLE');
-          expect(element(by.binding('text')).getText()).toEqual('TEXT');
+          input('title').enter('TITLE');
+          input('text').enter('TEXT');
+          expect(binding('title')).toEqual('TITLE');
+          expect(binding('text')).toEqual('TEXT');
         });
-     </doc:protractor>
+     </doc:scenario>
    </doc:example>
  *
  */
 var ngTranscludeDirective = ngDirective({
-  link: function($scope, $element, $attrs, controller, $transclude) {
+  controller: ['$element', '$transclude', function($element, $transclude) {
     if (!$transclude) {
       throw minErr('ngTransclude')('orphan',
-       'Illegal use of ngTransclude directive in the template! ' +
-       'No parent directive that requires a transclusion found. ' +
-       'Element: {0}',
-       startingTag($element));
+          'Illegal use of ngTransclude directive in the template! ' +
+          'No parent directive that requires a transclusion found. ' +
+          'Element: {0}',
+          startingTag($element));
     }
-    
-    $transclude(function(clone) {
+
+    // remember the transclusion fn but call it during linking so that we don't process transclusion before directives on
+    // the parent element even when the transclusion replaces the current element. (we can't use priority here because
+    // that applies only to compile fns and not controllers
+    this.$transclude = $transclude;
+  }],
+
+  link: function($scope, $element, $attrs, controller) {
+    controller.$transclude(function(clone) {
       $element.empty();
       $element.append(clone);
     });
@@ -20181,14 +20965,10 @@ var ngTranscludeDirective = ngDirective({
  * @restrict E
  *
  * @description
- * Load the content of a `<script>` element into {@link api/ng.$templateCache `$templateCache`}, so that the
- * template can be used by {@link api/ng.directive:ngInclude `ngInclude`},
- * {@link api/ngRoute.directive:ngView `ngView`}, or {@link guide/directive directives}. The type of the
- * `<script>` element must be specified as `text/ng-template`, and a cache name for the template must be
- * assigned through the element's `id`, which can then be used as a directive's `templateUrl`.
+ * Load content of a script tag, with type `text/ng-template`, into `$templateCache`, so that the
+ * template can be used by `ngInclude`, `ngView` or directive templates.
  *
- * @param {'text/ng-template'} type Must be set to `'text/ng-template'`.
- * @param {string} id Cache name of the template.
+ * @param {'text/ng-template'} type must be set to `'text/ng-template'`
  *
  * @example
   <doc:example>
@@ -20200,12 +20980,12 @@ var ngTranscludeDirective = ngDirective({
       <a ng-click="currentTpl='/tpl.html'" id="tpl-link">Load inlined template</a>
       <div id="tpl-content" ng-include src="currentTpl"></div>
     </doc:source>
-    <doc:protractor>
+    <doc:scenario>
       it('should load template defined inside script tag', function() {
-        element(by.css('#tpl-link')).click();
-        expect(element(by.css('#tpl-content')).getText()).toMatch(/Content of the template/);
+        element('#tpl-link').click();
+        expect(element('#tpl-content').text()).toMatch(/Content of the template/);
       });
-    </doc:protractor>
+    </doc:scenario>
   </doc:example>
  */
 var scriptDirective = ['$templateCache', function($templateCache) {
@@ -20243,21 +21023,14 @@ var ngOptionsMinErr = minErr('ngOptions');
  * represented by the selected option will be bound to the model identified by the `ngModel`
  * directive.
  *
- * <div class="alert alert-warning">
- * **Note:** `ngModel` compares by reference, not value. This is important when binding to an
- * array of objects. See an example {@link http://jsfiddle.net/qWzTb/ in this jsfiddle}.
- * </div>
- *
  * Optionally, a single hard-coded `<option>` element, with the value set to an empty string, can
  * be nested into the `<select>` element. This element will then represent the `null` or "not selected"
  * option. See example below for demonstration.
  *
- * <div class="alert alert-warning">
- * **Note:** `ngOptions` provides an iterator facility for the `<option>` element which should be used instead
+ * Note: `ngOptions` provides iterator facility for `<option>` element which should be used instead
  * of {@link ng.directive:ngRepeat ngRepeat} when you want the
  * `select` model to be bound to a non-string value. This is because an option element can only
  * be bound to string values at present.
- * </div>
  *
  * @param {string} ngModel Assignable angular expression to data-bind to.
  * @param {string=} name Property name of the form under which the control is published.
@@ -20344,25 +21117,23 @@ var ngOptionsMinErr = minErr('ngOptions');
           </div>
         </div>
       </doc:source>
-      <doc:protractor>
+      <doc:scenario>
          it('should check ng-options', function() {
-           expect(element(by.binding('{selected_color:color}')).getText()).toMatch('red');
-           element.all(by.select('color')).first().click();
-           element.all(by.css('select[ng-model="color"] option')).first().click();
-           expect(element(by.binding('{selected_color:color}')).getText()).toMatch('black');
-           element(by.css('.nullable select[ng-model="color"]')).click();
-           element.all(by.css('.nullable select[ng-model="color"] option')).first().click();
-           expect(element(by.binding('{selected_color:color}')).getText()).toMatch('null');
+           expect(binding('{selected_color:color}')).toMatch('red');
+           select('color').option('0');
+           expect(binding('{selected_color:color}')).toMatch('black');
+           using('.nullable').select('color').option('');
+           expect(binding('{selected_color:color}')).toMatch('null');
          });
-      </doc:protractor>
+      </doc:scenario>
     </doc:example>
  */
 
 var ngOptionsDirective = valueFn({ terminal: true });
 // jshint maxlen: false
 var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
-                         //000011111111110000000000022222222220000000000000000000003333333333000000000000004444444444444440000000005555555555555550000000666666666666666000000000000000777777777700000000000000000008888888888
-  var NG_OPTIONS_REGEXP = /^\s*([\s\S]+?)(?:\s+as\s+([\s\S]+?))?(?:\s+group\s+by\s+([\s\S]+?))?\s+for\s+(?:([\$\w][\$\w]*)|(?:\(\s*([\$\w][\$\w]*)\s*,\s*([\$\w][\$\w]*)\s*\)))\s+in\s+([\s\S]+?)(?:\s+track\s+by\s+([\s\S]+?))?$/,
+                         //0000111110000000000022220000000000000000000000333300000000000000444444444444444000000000555555555555555000000066666666666666600000000000000007777000000000000000000088888
+  var NG_OPTIONS_REGEXP = /^\s*(.*?)(?:\s+as\s+(.*?))?(?:\s+group\s+by\s+(.*))?\s+for\s+(?:([\$\w][\$\w]*)|(?:\(\s*([\$\w][\$\w]*)\s*,\s*([\$\w][\$\w]*)\s*\)))\s+in\s+(.*?)(?:\s+track\s+by\s+(.*?))?$/,
       nullModelCtrl = {$setViewValue: noop};
 // jshint maxlen: 100
 
@@ -20663,7 +21434,7 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
 
           // We now build up the list of options we need (we merge later)
           for (index = 0; length = keys.length, index < length; index++) {
-
+            
             key = index;
             if (keyName) {
               key = keys[index];
@@ -20871,4 +21642,3299 @@ var styleDirective = valueFn({
 
 })(window, document);
 
-!angular.$$csp() && angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide{display:none !important;}ng\\:form{display:block;}.ng-animate-block-transitions{transition:0s all!important;-webkit-transition:0s all!important;}</style>');
+!angular.$$csp() && angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide{display:none !important;}ng\\:form{display:block;}</style>');
+/**
+ * @license AngularJS v1.2.7-build.2025+sha.d1c4766
+ * (c) 2010-2014 Google, Inc. http://angularjs.org
+ * License: MIT
+ */
+(function(window, angular, undefined) {'use strict';
+
+/**
+ * @ngdoc overview
+ * @name ngRoute
+ * @description
+ *
+ * # ngRoute
+ *
+ * The `ngRoute` module provides routing and deeplinking services and directives for angular apps.
+ *
+ * ## Example
+ * See {@link ngRoute.$route#example $route} for an example of configuring and using `ngRoute`.
+ * 
+ * {@installModule route}
+ *
+ * <div doc-module-components="ngRoute"></div>
+ */
+ /* global -ngRouteModule */
+var ngRouteModule = angular.module('ngRoute', ['ng']).
+                        provider('$route', $RouteProvider);
+
+/**
+ * @ngdoc object
+ * @name ngRoute.$routeProvider
+ * @function
+ *
+ * @description
+ *
+ * Used for configuring routes.
+ * 
+ * ## Example
+ * See {@link ngRoute.$route#example $route} for an example of configuring and using `ngRoute`.
+ *
+ * ## Dependencies
+ * Requires the {@link ngRoute `ngRoute`} module to be installed.
+ */
+function $RouteProvider(){
+  function inherit(parent, extra) {
+    return angular.extend(new (angular.extend(function() {}, {prototype:parent}))(), extra);
+  }
+
+  var routes = {};
+
+  /**
+   * @ngdoc method
+   * @name ngRoute.$routeProvider#when
+   * @methodOf ngRoute.$routeProvider
+   *
+   * @param {string} path Route path (matched against `$location.path`). If `$location.path`
+   *    contains redundant trailing slash or is missing one, the route will still match and the
+   *    `$location.path` will be updated to add or drop the trailing slash to exactly match the
+   *    route definition.
+   *
+   *      * `path` can contain named groups starting with a colon: e.g. `:name`. All characters up
+   *        to the next slash are matched and stored in `$routeParams` under the given `name`
+   *        when the route matches.
+   *      * `path` can contain named groups starting with a colon and ending with a star:
+   *        e.g.`:name*`. All characters are eagerly stored in `$routeParams` under the given `name`
+   *        when the route matches.
+   *      * `path` can contain optional named groups with a question mark: e.g.`:name?`.
+   *
+   *    For example, routes like `/color/:color/largecode/:largecode*\/edit` will match
+   *    `/color/brown/largecode/code/with/slashs/edit` and extract:
+   *
+   *      * `color: brown`
+   *      * `largecode: code/with/slashs`.
+   *
+   *
+   * @param {Object} route Mapping information to be assigned to `$route.current` on route
+   *    match.
+   *
+   *    Object properties:
+   *
+   *    - `controller` – `{(string|function()=}` – Controller fn that should be associated with
+   *      newly created scope or the name of a {@link angular.Module#controller registered
+   *      controller} if passed as a string.
+   *    - `controllerAs` – `{string=}` – A controller alias name. If present the controller will be
+   *      published to scope under the `controllerAs` name.
+   *    - `template` – `{string=|function()=}` – html template as a string or a function that
+   *      returns an html template as a string which should be used by {@link
+   *      ngRoute.directive:ngView ngView} or {@link ng.directive:ngInclude ngInclude} directives.
+   *      This property takes precedence over `templateUrl`.
+   *
+   *      If `template` is a function, it will be called with the following parameters:
+   *
+   *      - `{Array.<Object>}` - route parameters extracted from the current
+   *        `$location.path()` by applying the current route
+   *
+   *    - `templateUrl` – `{string=|function()=}` – path or function that returns a path to an html
+   *      template that should be used by {@link ngRoute.directive:ngView ngView}.
+   *
+   *      If `templateUrl` is a function, it will be called with the following parameters:
+   *
+   *      - `{Array.<Object>}` - route parameters extracted from the current
+   *        `$location.path()` by applying the current route
+   *
+   *    - `resolve` - `{Object.<string, function>=}` - An optional map of dependencies which should
+   *      be injected into the controller. If any of these dependencies are promises, the router
+   *      will wait for them all to be resolved or one to be rejected before the controller is
+   *      instantiated.
+   *      If all the promises are resolved successfully, the values of the resolved promises are
+   *      injected and {@link ngRoute.$route#$routeChangeSuccess $routeChangeSuccess} event is
+   *      fired. If any of the promises are rejected the
+   *      {@link ngRoute.$route#$routeChangeError $routeChangeError} event is fired. The map object
+   *      is:
+   *
+   *      - `key` – `{string}`: a name of a dependency to be injected into the controller.
+   *      - `factory` - `{string|function}`: If `string` then it is an alias for a service.
+   *        Otherwise if function, then it is {@link api/AUTO.$injector#invoke injected}
+   *        and the return value is treated as the dependency. If the result is a promise, it is
+   *        resolved before its value is injected into the controller. Be aware that
+   *        `ngRoute.$routeParams` will still refer to the previous route within these resolve
+   *        functions.  Use `$route.current.params` to access the new route parameters, instead.
+   *
+   *    - `redirectTo` – {(string|function())=} – value to update
+   *      {@link ng.$location $location} path with and trigger route redirection.
+   *
+   *      If `redirectTo` is a function, it will be called with the following parameters:
+   *
+   *      - `{Object.<string>}` - route parameters extracted from the current
+   *        `$location.path()` by applying the current route templateUrl.
+   *      - `{string}` - current `$location.path()`
+   *      - `{Object}` - current `$location.search()`
+   *
+   *      The custom `redirectTo` function is expected to return a string which will be used
+   *      to update `$location.path()` and `$location.search()`.
+   *
+   *    - `[reloadOnSearch=true]` - {boolean=} - reload route when only `$location.search()`
+   *      or `$location.hash()` changes.
+   *
+   *      If the option is set to `false` and url in the browser changes, then
+   *      `$routeUpdate` event is broadcasted on the root scope.
+   *
+   *    - `[caseInsensitiveMatch=false]` - {boolean=} - match routes without being case sensitive
+   *
+   *      If the option is set to `true`, then the particular route can be matched without being
+   *      case sensitive
+   *
+   * @returns {Object} self
+   *
+   * @description
+   * Adds a new route definition to the `$route` service.
+   */
+  this.when = function(path, route) {
+    routes[path] = angular.extend(
+      {reloadOnSearch: true},
+      route,
+      path && pathRegExp(path, route)
+    );
+
+    // create redirection for trailing slashes
+    if (path) {
+      var redirectPath = (path[path.length-1] == '/')
+            ? path.substr(0, path.length-1)
+            : path +'/';
+
+      routes[redirectPath] = angular.extend(
+        {redirectTo: path},
+        pathRegExp(redirectPath, route)
+      );
+    }
+
+    return this;
+  };
+
+   /**
+    * @param path {string} path
+    * @param opts {Object} options
+    * @return {?Object}
+    *
+    * @description
+    * Normalizes the given path, returning a regular expression
+    * and the original path.
+    *
+    * Inspired by pathRexp in visionmedia/express/lib/utils.js.
+    */
+  function pathRegExp(path, opts) {
+    var insensitive = opts.caseInsensitiveMatch,
+        ret = {
+          originalPath: path,
+          regexp: path
+        },
+        keys = ret.keys = [];
+
+    path = path
+      .replace(/([().])/g, '\\$1')
+      .replace(/(\/)?:(\w+)([\?|\*])?/g, function(_, slash, key, option){
+        var optional = option === '?' ? option : null;
+        var star = option === '*' ? option : null;
+        keys.push({ name: key, optional: !!optional });
+        slash = slash || '';
+        return ''
+          + (optional ? '' : slash)
+          + '(?:'
+          + (optional ? slash : '')
+          + (star && '(.+?)' || '([^/]+)')
+          + (optional || '')
+          + ')'
+          + (optional || '');
+      })
+      .replace(/([\/$\*])/g, '\\$1');
+
+    ret.regexp = new RegExp('^' + path + '$', insensitive ? 'i' : '');
+    return ret;
+  }
+
+  /**
+   * @ngdoc method
+   * @name ngRoute.$routeProvider#otherwise
+   * @methodOf ngRoute.$routeProvider
+   *
+   * @description
+   * Sets route definition that will be used on route change when no other route definition
+   * is matched.
+   *
+   * @param {Object} params Mapping information to be assigned to `$route.current`.
+   * @returns {Object} self
+   */
+  this.otherwise = function(params) {
+    this.when(null, params);
+    return this;
+  };
+
+
+  this.$get = ['$rootScope',
+               '$location',
+               '$routeParams',
+               '$q',
+               '$injector',
+               '$http',
+               '$templateCache',
+               '$sce',
+      function($rootScope, $location, $routeParams, $q, $injector, $http, $templateCache, $sce) {
+
+    /**
+     * @ngdoc object
+     * @name ngRoute.$route
+     * @requires $location
+     * @requires $routeParams
+     *
+     * @property {Object} current Reference to the current route definition.
+     * The route definition contains:
+     *
+     *   - `controller`: The controller constructor as define in route definition.
+     *   - `locals`: A map of locals which is used by {@link ng.$controller $controller} service for
+     *     controller instantiation. The `locals` contain
+     *     the resolved values of the `resolve` map. Additionally the `locals` also contain:
+     *
+     *     - `$scope` - The current route scope.
+     *     - `$template` - The current route template HTML.
+     *
+     * @property {Array.<Object>} routes Array of all configured routes.
+     *
+     * @description
+     * `$route` is used for deep-linking URLs to controllers and views (HTML partials).
+     * It watches `$location.url()` and tries to map the path to an existing route definition.
+     *
+     * Requires the {@link ngRoute `ngRoute`} module to be installed.
+     *
+     * You can define routes through {@link ngRoute.$routeProvider $routeProvider}'s API.
+     *
+     * The `$route` service is typically used in conjunction with the
+     * {@link ngRoute.directive:ngView `ngView`} directive and the
+     * {@link ngRoute.$routeParams `$routeParams`} service.
+     *
+     * @example
+       This example shows how changing the URL hash causes the `$route` to match a route against the
+       URL, and the `ngView` pulls in the partial.
+
+       Note that this example is using {@link ng.directive:script inlined templates}
+       to get it working on jsfiddle as well.
+
+     <example module="ngViewExample" deps="angular-route.js">
+       <file name="index.html">
+         <div ng-controller="MainCntl">
+           Choose:
+           <a href="Book/Moby">Moby</a> |
+           <a href="Book/Moby/ch/1">Moby: Ch1</a> |
+           <a href="Book/Gatsby">Gatsby</a> |
+           <a href="Book/Gatsby/ch/4?key=value">Gatsby: Ch4</a> |
+           <a href="Book/Scarlet">Scarlet Letter</a><br/>
+
+           <div ng-view></div>
+           <hr />
+
+           <pre>$location.path() = {{$location.path()}}</pre>
+           <pre>$route.current.templateUrl = {{$route.current.templateUrl}}</pre>
+           <pre>$route.current.params = {{$route.current.params}}</pre>
+           <pre>$route.current.scope.name = {{$route.current.scope.name}}</pre>
+           <pre>$routeParams = {{$routeParams}}</pre>
+         </div>
+       </file>
+
+       <file name="book.html">
+         controller: {{name}}<br />
+         Book Id: {{params.bookId}}<br />
+       </file>
+
+       <file name="chapter.html">
+         controller: {{name}}<br />
+         Book Id: {{params.bookId}}<br />
+         Chapter Id: {{params.chapterId}}
+       </file>
+
+       <file name="script.js">
+         angular.module('ngViewExample', ['ngRoute'])
+
+         .config(function($routeProvider, $locationProvider) {
+           $routeProvider.when('/Book/:bookId', {
+             templateUrl: 'book.html',
+             controller: BookCntl,
+             resolve: {
+               // I will cause a 1 second delay
+               delay: function($q, $timeout) {
+                 var delay = $q.defer();
+                 $timeout(delay.resolve, 1000);
+                 return delay.promise;
+               }
+             }
+           });
+           $routeProvider.when('/Book/:bookId/ch/:chapterId', {
+             templateUrl: 'chapter.html',
+             controller: ChapterCntl
+           });
+
+           // configure html5 to get links working on jsfiddle
+           $locationProvider.html5Mode(true);
+         });
+
+         function MainCntl($scope, $route, $routeParams, $location) {
+           $scope.$route = $route;
+           $scope.$location = $location;
+           $scope.$routeParams = $routeParams;
+         }
+
+         function BookCntl($scope, $routeParams) {
+           $scope.name = "BookCntl";
+           $scope.params = $routeParams;
+         }
+
+         function ChapterCntl($scope, $routeParams) {
+           $scope.name = "ChapterCntl";
+           $scope.params = $routeParams;
+         }
+       </file>
+
+       <file name="scenario.js">
+         it('should load and compile correct template', function() {
+           element('a:contains("Moby: Ch1")').click();
+           var content = element('.doc-example-live [ng-view]').text();
+           expect(content).toMatch(/controller\: ChapterCntl/);
+           expect(content).toMatch(/Book Id\: Moby/);
+           expect(content).toMatch(/Chapter Id\: 1/);
+
+           element('a:contains("Scarlet")').click();
+           sleep(2); // promises are not part of scenario waiting
+           content = element('.doc-example-live [ng-view]').text();
+           expect(content).toMatch(/controller\: BookCntl/);
+           expect(content).toMatch(/Book Id\: Scarlet/);
+         });
+       </file>
+     </example>
+     */
+
+    /**
+     * @ngdoc event
+     * @name ngRoute.$route#$routeChangeStart
+     * @eventOf ngRoute.$route
+     * @eventType broadcast on root scope
+     * @description
+     * Broadcasted before a route change. At this  point the route services starts
+     * resolving all of the dependencies needed for the route change to occurs.
+     * Typically this involves fetching the view template as well as any dependencies
+     * defined in `resolve` route property. Once  all of the dependencies are resolved
+     * `$routeChangeSuccess` is fired.
+     *
+     * @param {Object} angularEvent Synthetic event object.
+     * @param {Route} next Future route information.
+     * @param {Route} current Current route information.
+     */
+
+    /**
+     * @ngdoc event
+     * @name ngRoute.$route#$routeChangeSuccess
+     * @eventOf ngRoute.$route
+     * @eventType broadcast on root scope
+     * @description
+     * Broadcasted after a route dependencies are resolved.
+     * {@link ngRoute.directive:ngView ngView} listens for the directive
+     * to instantiate the controller and render the view.
+     *
+     * @param {Object} angularEvent Synthetic event object.
+     * @param {Route} current Current route information.
+     * @param {Route|Undefined} previous Previous route information, or undefined if current is
+     * first route entered.
+     */
+
+    /**
+     * @ngdoc event
+     * @name ngRoute.$route#$routeChangeError
+     * @eventOf ngRoute.$route
+     * @eventType broadcast on root scope
+     * @description
+     * Broadcasted if any of the resolve promises are rejected.
+     *
+     * @param {Object} angularEvent Synthetic event object
+     * @param {Route} current Current route information.
+     * @param {Route} previous Previous route information.
+     * @param {Route} rejection Rejection of the promise. Usually the error of the failed promise.
+     */
+
+    /**
+     * @ngdoc event
+     * @name ngRoute.$route#$routeUpdate
+     * @eventOf ngRoute.$route
+     * @eventType broadcast on root scope
+     * @description
+     *
+     * The `reloadOnSearch` property has been set to false, and we are reusing the same
+     * instance of the Controller.
+     */
+
+    var forceReload = false,
+        $route = {
+          routes: routes,
+
+          /**
+           * @ngdoc method
+           * @name ngRoute.$route#reload
+           * @methodOf ngRoute.$route
+           *
+           * @description
+           * Causes `$route` service to reload the current route even if
+           * {@link ng.$location $location} hasn't changed.
+           *
+           * As a result of that, {@link ngRoute.directive:ngView ngView}
+           * creates new scope, reinstantiates the controller.
+           */
+          reload: function() {
+            forceReload = true;
+            $rootScope.$evalAsync(updateRoute);
+          }
+        };
+
+    $rootScope.$on('$locationChangeSuccess', updateRoute);
+
+    return $route;
+
+    /////////////////////////////////////////////////////
+
+    /**
+     * @param on {string} current url
+     * @param route {Object} route regexp to match the url against
+     * @return {?Object}
+     *
+     * @description
+     * Check if the route matches the current url.
+     *
+     * Inspired by match in
+     * visionmedia/express/lib/router/router.js.
+     */
+    function switchRouteMatcher(on, route) {
+      var keys = route.keys,
+          params = {};
+
+      if (!route.regexp) return null;
+
+      var m = route.regexp.exec(on);
+      if (!m) return null;
+
+      for (var i = 1, len = m.length; i < len; ++i) {
+        var key = keys[i - 1];
+
+        var val = 'string' == typeof m[i]
+              ? decodeURIComponent(m[i])
+              : m[i];
+
+        if (key && val) {
+          params[key.name] = val;
+        }
+      }
+      return params;
+    }
+
+    function updateRoute() {
+      var next = parseRoute(),
+          last = $route.current;
+
+      if (next && last && next.$$route === last.$$route
+          && angular.equals(next.pathParams, last.pathParams)
+          && !next.reloadOnSearch && !forceReload) {
+        last.params = next.params;
+        angular.copy(last.params, $routeParams);
+        $rootScope.$broadcast('$routeUpdate', last);
+      } else if (next || last) {
+        forceReload = false;
+        $rootScope.$broadcast('$routeChangeStart', next, last);
+        $route.current = next;
+        if (next) {
+          if (next.redirectTo) {
+            if (angular.isString(next.redirectTo)) {
+              $location.path(interpolate(next.redirectTo, next.params)).search(next.params)
+                       .replace();
+            } else {
+              $location.url(next.redirectTo(next.pathParams, $location.path(), $location.search()))
+                       .replace();
+            }
+          }
+        }
+
+        $q.when(next).
+          then(function() {
+            if (next) {
+              var locals = angular.extend({}, next.resolve),
+                  template, templateUrl;
+
+              angular.forEach(locals, function(value, key) {
+                locals[key] = angular.isString(value) ?
+                    $injector.get(value) : $injector.invoke(value);
+              });
+
+              if (angular.isDefined(template = next.template)) {
+                if (angular.isFunction(template)) {
+                  template = template(next.params);
+                }
+              } else if (angular.isDefined(templateUrl = next.templateUrl)) {
+                if (angular.isFunction(templateUrl)) {
+                  templateUrl = templateUrl(next.params);
+                }
+                templateUrl = $sce.getTrustedResourceUrl(templateUrl);
+                if (angular.isDefined(templateUrl)) {
+                  next.loadedTemplateUrl = templateUrl;
+                  template = $http.get(templateUrl, {cache: $templateCache}).
+                      then(function(response) { return response.data; });
+                }
+              }
+              if (angular.isDefined(template)) {
+                locals['$template'] = template;
+              }
+              return $q.all(locals);
+            }
+          }).
+          // after route change
+          then(function(locals) {
+            if (next == $route.current) {
+              if (next) {
+                next.locals = locals;
+                angular.copy(next.params, $routeParams);
+              }
+              $rootScope.$broadcast('$routeChangeSuccess', next, last);
+            }
+          }, function(error) {
+            if (next == $route.current) {
+              $rootScope.$broadcast('$routeChangeError', next, last, error);
+            }
+          });
+      }
+    }
+
+
+    /**
+     * @returns the current active route, by matching it against the URL
+     */
+    function parseRoute() {
+      // Match a route
+      var params, match;
+      angular.forEach(routes, function(route, path) {
+        if (!match && (params = switchRouteMatcher($location.path(), route))) {
+          match = inherit(route, {
+            params: angular.extend({}, $location.search(), params),
+            pathParams: params});
+          match.$$route = route;
+        }
+      });
+      // No route matched; fallback to "otherwise" route
+      return match || routes[null] && inherit(routes[null], {params: {}, pathParams:{}});
+    }
+
+    /**
+     * @returns interpolation of the redirect path with the parameters
+     */
+    function interpolate(string, params) {
+      var result = [];
+      angular.forEach((string||'').split(':'), function(segment, i) {
+        if (i === 0) {
+          result.push(segment);
+        } else {
+          var segmentMatch = segment.match(/(\w+)(.*)/);
+          var key = segmentMatch[1];
+          result.push(params[key]);
+          result.push(segmentMatch[2] || '');
+          delete params[key];
+        }
+      });
+      return result.join('');
+    }
+  }];
+}
+
+ngRouteModule.provider('$routeParams', $RouteParamsProvider);
+
+
+/**
+ * @ngdoc object
+ * @name ngRoute.$routeParams
+ * @requires $route
+ *
+ * @description
+ * The `$routeParams` service allows you to retrieve the current set of route parameters.
+ *
+ * Requires the {@link ngRoute `ngRoute`} module to be installed.
+ *
+ * The route parameters are a combination of {@link ng.$location `$location`}'s
+ * {@link ng.$location#methods_search `search()`} and {@link ng.$location#methods_path `path()`}.
+ * The `path` parameters are extracted when the {@link ngRoute.$route `$route`} path is matched.
+ *
+ * In case of parameter name collision, `path` params take precedence over `search` params.
+ *
+ * The service guarantees that the identity of the `$routeParams` object will remain unchanged
+ * (but its properties will likely change) even when a route change occurs.
+ *
+ * Note that the `$routeParams` are only updated *after* a route change completes successfully.
+ * This means that you cannot rely on `$routeParams` being correct in route resolve functions.
+ * Instead you can use `$route.current.params` to access the new route's parameters.
+ *
+ * @example
+ * <pre>
+ *  // Given:
+ *  // URL: http://server.com/index.html#/Chapter/1/Section/2?search=moby
+ *  // Route: /Chapter/:chapterId/Section/:sectionId
+ *  //
+ *  // Then
+ *  $routeParams ==> {chapterId:1, sectionId:2, search:'moby'}
+ * </pre>
+ */
+function $RouteParamsProvider() {
+  this.$get = function() { return {}; };
+}
+
+ngRouteModule.directive('ngView', ngViewFactory);
+ngRouteModule.directive('ngView', ngViewFillContentFactory);
+
+
+/**
+ * @ngdoc directive
+ * @name ngRoute.directive:ngView
+ * @restrict ECA
+ *
+ * @description
+ * # Overview
+ * `ngView` is a directive that complements the {@link ngRoute.$route $route} service by
+ * including the rendered template of the current route into the main layout (`index.html`) file.
+ * Every time the current route changes, the included view changes with it according to the
+ * configuration of the `$route` service.
+ *
+ * Requires the {@link ngRoute `ngRoute`} module to be installed.
+ *
+ * @animations
+ * enter - animation is used to bring new content into the browser.
+ * leave - animation is used to animate existing content away.
+ *
+ * The enter and leave animation occur concurrently.
+ *
+ * @scope
+ * @priority 400
+ * @example
+    <example module="ngViewExample" deps="angular-route.js" animations="true">
+      <file name="index.html">
+        <div ng-controller="MainCntl as main">
+          Choose:
+          <a href="Book/Moby">Moby</a> |
+          <a href="Book/Moby/ch/1">Moby: Ch1</a> |
+          <a href="Book/Gatsby">Gatsby</a> |
+          <a href="Book/Gatsby/ch/4?key=value">Gatsby: Ch4</a> |
+          <a href="Book/Scarlet">Scarlet Letter</a><br/>
+
+          <div class="view-animate-container">
+            <div ng-view class="view-animate"></div>
+          </div>
+          <hr />
+
+          <pre>$location.path() = {{main.$location.path()}}</pre>
+          <pre>$route.current.templateUrl = {{main.$route.current.templateUrl}}</pre>
+          <pre>$route.current.params = {{main.$route.current.params}}</pre>
+          <pre>$route.current.scope.name = {{main.$route.current.scope.name}}</pre>
+          <pre>$routeParams = {{main.$routeParams}}</pre>
+        </div>
+      </file>
+
+      <file name="book.html">
+        <div>
+          controller: {{book.name}}<br />
+          Book Id: {{book.params.bookId}}<br />
+        </div>
+      </file>
+
+      <file name="chapter.html">
+        <div>
+          controller: {{chapter.name}}<br />
+          Book Id: {{chapter.params.bookId}}<br />
+          Chapter Id: {{chapter.params.chapterId}}
+        </div>
+      </file>
+
+      <file name="animations.css">
+        .view-animate-container {
+          position:relative;
+          height:100px!important;
+          position:relative;
+          background:white;
+          border:1px solid black;
+          height:40px;
+          overflow:hidden;
+        }
+
+        .view-animate {
+          padding:10px;
+        }
+
+        .view-animate.ng-enter, .view-animate.ng-leave {
+          -webkit-transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.5s;
+          transition:all cubic-bezier(0.250, 0.460, 0.450, 0.940) 1.5s;
+
+          display:block;
+          width:100%;
+          border-left:1px solid black;
+
+          position:absolute;
+          top:0;
+          left:0;
+          right:0;
+          bottom:0;
+          padding:10px;
+        }
+
+        .view-animate.ng-enter {
+          left:100%;
+        }
+        .view-animate.ng-enter.ng-enter-active {
+          left:0;
+        }
+        .view-animate.ng-leave.ng-leave-active {
+          left:-100%;
+        }
+      </file>
+
+      <file name="script.js">
+        angular.module('ngViewExample', ['ngRoute', 'ngAnimate'],
+          function($routeProvider, $locationProvider) {
+            $routeProvider.when('/Book/:bookId', {
+              templateUrl: 'book.html',
+              controller: BookCntl,
+              controllerAs: 'book'
+            });
+            $routeProvider.when('/Book/:bookId/ch/:chapterId', {
+              templateUrl: 'chapter.html',
+              controller: ChapterCntl,
+              controllerAs: 'chapter'
+            });
+
+            // configure html5 to get links working on jsfiddle
+            $locationProvider.html5Mode(true);
+        });
+
+        function MainCntl($route, $routeParams, $location) {
+          this.$route = $route;
+          this.$location = $location;
+          this.$routeParams = $routeParams;
+        }
+
+        function BookCntl($routeParams) {
+          this.name = "BookCntl";
+          this.params = $routeParams;
+        }
+
+        function ChapterCntl($routeParams) {
+          this.name = "ChapterCntl";
+          this.params = $routeParams;
+        }
+      </file>
+
+      <file name="scenario.js">
+        it('should load and compile correct template', function() {
+          element('a:contains("Moby: Ch1")').click();
+          var content = element('.doc-example-live [ng-view]').text();
+          expect(content).toMatch(/controller\: ChapterCntl/);
+          expect(content).toMatch(/Book Id\: Moby/);
+          expect(content).toMatch(/Chapter Id\: 1/);
+
+          element('a:contains("Scarlet")').click();
+          content = element('.doc-example-live [ng-view]').text();
+          expect(content).toMatch(/controller\: BookCntl/);
+          expect(content).toMatch(/Book Id\: Scarlet/);
+        });
+      </file>
+    </example>
+ */
+
+
+/**
+ * @ngdoc event
+ * @name ngRoute.directive:ngView#$viewContentLoaded
+ * @eventOf ngRoute.directive:ngView
+ * @eventType emit on the current ngView scope
+ * @description
+ * Emitted every time the ngView content is reloaded.
+ */
+ngViewFactory.$inject = ['$route', '$anchorScroll', '$animate'];
+function ngViewFactory(   $route,   $anchorScroll,   $animate) {
+  return {
+    restrict: 'ECA',
+    terminal: true,
+    priority: 400,
+    transclude: 'element',
+    link: function(scope, $element, attr, ctrl, $transclude) {
+        var currentScope,
+            currentElement,
+            autoScrollExp = attr.autoscroll,
+            onloadExp = attr.onload || '';
+
+        scope.$on('$routeChangeSuccess', update);
+        update();
+
+        function cleanupLastView() {
+          if (currentScope) {
+            currentScope.$destroy();
+            currentScope = null;
+          }
+          if(currentElement) {
+            $animate.leave(currentElement);
+            currentElement = null;
+          }
+        }
+
+        function update() {
+          var locals = $route.current && $route.current.locals,
+              template = locals && locals.$template;
+
+          if (template) {
+            var newScope = scope.$new();
+            var current = $route.current;
+
+            // Note: This will also link all children of ng-view that were contained in the original
+            // html. If that content contains controllers, ... they could pollute/change the scope.
+            // However, using ng-view on an element with additional content does not make sense...
+            // Note: We can't remove them in the cloneAttchFn of $transclude as that
+            // function is called before linking the content, which would apply child
+            // directives to non existing elements.
+            var clone = $transclude(newScope, function(clone) {
+              $animate.enter(clone, null, currentElement || $element, function onNgViewEnter () {
+                if (angular.isDefined(autoScrollExp)
+                  && (!autoScrollExp || scope.$eval(autoScrollExp))) {
+                  $anchorScroll();
+                }
+              });
+              cleanupLastView();
+            });
+
+            currentElement = clone;
+            currentScope = current.scope = newScope;
+            currentScope.$emit('$viewContentLoaded');
+            currentScope.$eval(onloadExp);
+          } else {
+            cleanupLastView();
+          }
+        }
+    }
+  };
+}
+
+// This directive is called during the $transclude call of the first `ngView` directive.
+// It will replace and compile the content of the element with the loaded template.
+// We need this directive so that the element content is already filled when
+// the link function of another directive on the same element as ngView
+// is called.
+ngViewFillContentFactory.$inject = ['$compile', '$controller', '$route'];
+function ngViewFillContentFactory($compile, $controller, $route) {
+  return {
+    restrict: 'ECA',
+    priority: -400,
+    link: function(scope, $element) {
+      var current = $route.current,
+          locals = current.locals;
+
+      $element.html(locals.$template);
+
+      var link = $compile($element.contents());
+
+      if (current.controller) {
+        locals.$scope = scope;
+        var controller = $controller(current.controller, locals);
+        if (current.controllerAs) {
+          scope[current.controllerAs] = controller;
+        }
+        $element.data('$ngControllerController', controller);
+        $element.children().data('$ngControllerController', controller);
+      }
+
+      link(scope);
+    }
+  };
+}
+
+
+})(window, window.angular);
+
+/**
+ * @license AngularJS v1.2.7-build.2025+sha.d1c4766
+ * (c) 2010-2014 Google, Inc. http://angularjs.org
+ * License: MIT
+ */
+(function(window, angular, undefined) {'use strict';
+
+/* jshint maxlen: false */
+
+/**
+ * @ngdoc overview
+ * @name ngAnimate
+ * @description
+ *
+ * # ngAnimate
+ *
+ * The `ngAnimate` module provides support for JavaScript, CSS3 transition and CSS3 keyframe animation hooks within existing core and custom directives.
+ *
+ * {@installModule animate}
+ *
+ * <div doc-module-components="ngAnimate"></div>
+ *
+ * # Usage
+ *
+ * To see animations in action, all that is required is to define the appropriate CSS classes
+ * or to register a JavaScript animation via the myModule.animation() function. The directives that support animation automatically are:
+ * `ngRepeat`, `ngInclude`, `ngIf`, `ngSwitch`, `ngShow`, `ngHide`, `ngView` and `ngClass`. Custom directives can take advantage of animation
+ * by using the `$animate` service.
+ *
+ * Below is a more detailed breakdown of the supported animation events provided by pre-existing ng directives:
+ *
+ * | Directive                                                 | Supported Animations                               |
+ * |---------------------------------------------------------- |----------------------------------------------------|
+ * | {@link ng.directive:ngRepeat#usage_animations ngRepeat}         | enter, leave and move                              |
+ * | {@link ngRoute.directive:ngView#usage_animations ngView}        | enter and leave                                    |
+ * | {@link ng.directive:ngInclude#usage_animations ngInclude}       | enter and leave                                    |
+ * | {@link ng.directive:ngSwitch#usage_animations ngSwitch}         | enter and leave                                    |
+ * | {@link ng.directive:ngIf#usage_animations ngIf}                 | enter and leave                                    |
+ * | {@link ng.directive:ngClass#usage_animations ngClass}           | add and remove                                     |
+ * | {@link ng.directive:ngShow#usage_animations ngShow & ngHide}    | add and remove (the ng-hide class value)           |
+ *
+ * You can find out more information about animations upon visiting each directive page.
+ *
+ * Below is an example of how to apply animations to a directive that supports animation hooks:
+ *
+ * <pre>
+ * <style type="text/css">
+ * .slide.ng-enter, .slide.ng-leave {
+ *   -webkit-transition:0.5s linear all;
+ *   transition:0.5s linear all;
+ * }
+ *
+ * .slide.ng-enter { }        /&#42; starting animations for enter &#42;/
+ * .slide.ng-enter-active { } /&#42; terminal animations for enter &#42;/
+ * .slide.ng-leave { }        /&#42; starting animations for leave &#42;/
+ * .slide.ng-leave-active { } /&#42; terminal animations for leave &#42;/
+ * </style>
+ *
+ * <!--
+ * the animate service will automatically add .ng-enter and .ng-leave to the element
+ * to trigger the CSS transition/animations
+ * -->
+ * <ANY class="slide" ng-include="..."></ANY>
+ * </pre>
+ *
+ * Keep in mind that if an animation is running, any child elements cannot be animated until the parent element's
+ * animation has completed.
+ *
+ * <h2>CSS-defined Animations</h2>
+ * The animate service will automatically apply two CSS classes to the animated element and these two CSS classes
+ * are designed to contain the start and end CSS styling. Both CSS transitions and keyframe animations are supported
+ * and can be used to play along with this naming structure.
+ *
+ * The following code below demonstrates how to perform animations using **CSS transitions** with Angular:
+ *
+ * <pre>
+ * <style type="text/css">
+ * /&#42;
+ *  The animate class is apart of the element and the ng-enter class
+ *  is attached to the element once the enter animation event is triggered
+ * &#42;/
+ * .reveal-animation.ng-enter {
+ *  -webkit-transition: 1s linear all; /&#42; Safari/Chrome &#42;/
+ *  transition: 1s linear all; /&#42; All other modern browsers and IE10+ &#42;/
+ *
+ *  /&#42; The animation preparation code &#42;/
+ *  opacity: 0;
+ * }
+ *
+ * /&#42;
+ *  Keep in mind that you want to combine both CSS
+ *  classes together to avoid any CSS-specificity
+ *  conflicts
+ * &#42;/
+ * .reveal-animation.ng-enter.ng-enter-active {
+ *  /&#42; The animation code itself &#42;/
+ *  opacity: 1;
+ * }
+ * </style>
+ *
+ * <div class="view-container">
+ *   <div ng-view class="reveal-animation"></div>
+ * </div>
+ * </pre>
+ *
+ * The following code below demonstrates how to perform animations using **CSS animations** with Angular:
+ *
+ * <pre>
+ * <style type="text/css">
+ * .reveal-animation.ng-enter {
+ *   -webkit-animation: enter_sequence 1s linear; /&#42; Safari/Chrome &#42;/
+ *   animation: enter_sequence 1s linear; /&#42; IE10+ and Future Browsers &#42;/
+ * }
+ * &#64-webkit-keyframes enter_sequence {
+ *   from { opacity:0; }
+ *   to { opacity:1; }
+ * }
+ * &#64keyframes enter_sequence {
+ *   from { opacity:0; }
+ *   to { opacity:1; }
+ * }
+ * </style>
+ *
+ * <div class="view-container">
+ *   <div ng-view class="reveal-animation"></div>
+ * </div>
+ * </pre>
+ *
+ * Both CSS3 animations and transitions can be used together and the animate service will figure out the correct duration and delay timing.
+ *
+ * Upon DOM mutation, the event class is added first (something like `ng-enter`), then the browser prepares itself to add
+ * the active class (in this case `ng-enter-active`) which then triggers the animation. The animation module will automatically
+ * detect the CSS code to determine when the animation ends. Once the animation is over then both CSS classes will be
+ * removed from the DOM. If a browser does not support CSS transitions or CSS animations then the animation will start and end
+ * immediately resulting in a DOM element that is at its final state. This final state is when the DOM element
+ * has no CSS transition/animation classes applied to it.
+ *
+ * <h3>CSS Staggering Animations</h3>
+ * A Staggering animation is a collection of animations that are issued with a slight delay in between each successive operation resulting in a
+ * curtain-like effect. The ngAnimate module, as of 1.2.0, supports staggering animations and the stagger effect can be
+ * performed by creating a **ng-EVENT-stagger** CSS class and attaching that class to the base CSS class used for
+ * the animation. The style property expected within the stagger class can either be a **transition-delay** or an
+ * **animation-delay** property (or both if your animation contains both transitions and keyframe animations).
+ *
+ * <pre>
+ * .my-animation.ng-enter {
+ *   /&#42; standard transition code &#42;/
+ *   -webkit-transition: 1s linear all;
+ *   transition: 1s linear all;
+ *   opacity:0;
+ * }
+ * .my-animation.ng-enter-stagger {
+ *   /&#42; this will have a 100ms delay between each successive leave animation &#42;/
+ *   -webkit-transition-delay: 0.1s;
+ *   transition-delay: 0.1s;
+ *
+ *   /&#42; in case the stagger doesn't work then these two values
+ *    must be set to 0 to avoid an accidental CSS inheritance &#42;/
+ *   -webkit-transition-duration: 0s;
+ *   transition-duration: 0s;
+ * }
+ * .my-animation.ng-enter.ng-enter-active {
+ *   /&#42; standard transition styles &#42;/
+ *   opacity:1;
+ * }
+ * </pre>
+ *
+ * Staggering animations work by default in ngRepeat (so long as the CSS class is defined). Outside of ngRepeat, to use staggering animations
+ * on your own, they can be triggered by firing multiple calls to the same event on $animate. However, the restrictions surrounding this
+ * are that each of the elements must have the same CSS className value as well as the same parent element. A stagger operation
+ * will also be reset if more than 10ms has passed after the last animation has been fired.
+ *
+ * The following code will issue the **ng-leave-stagger** event on the element provided:
+ *
+ * <pre>
+ * var kids = parent.children();
+ *
+ * $animate.leave(kids[0]); //stagger index=0
+ * $animate.leave(kids[1]); //stagger index=1
+ * $animate.leave(kids[2]); //stagger index=2
+ * $animate.leave(kids[3]); //stagger index=3
+ * $animate.leave(kids[4]); //stagger index=4
+ *
+ * $timeout(function() {
+ *   //stagger has reset itself
+ *   $animate.leave(kids[5]); //stagger index=0
+ *   $animate.leave(kids[6]); //stagger index=1
+ * }, 100, false);
+ * </pre>
+ *
+ * Stagger animations are currently only supported within CSS-defined animations.
+ *
+ * <h2>JavaScript-defined Animations</h2>
+ * In the event that you do not want to use CSS3 transitions or CSS3 animations or if you wish to offer animations on browsers that do not
+ * yet support CSS transitions/animations, then you can make use of JavaScript animations defined inside of your AngularJS module.
+ *
+ * <pre>
+ * //!annotate="YourApp" Your AngularJS Module|Replace this or ngModule with the module that you used to define your application.
+ * var ngModule = angular.module('YourApp', ['ngAnimate']);
+ * ngModule.animation('.my-crazy-animation', function() {
+ *   return {
+ *     enter: function(element, done) {
+ *       //run the animation here and call done when the animation is complete
+ *       return function(cancelled) {
+ *         //this (optional) function will be called when the animation
+ *         //completes or when the animation is cancelled (the cancelled
+ *         //flag will be set to true if cancelled).
+ *       };
+ *     },
+ *     leave: function(element, done) { },
+ *     move: function(element, done) { },
+ *
+ *     //animation that can be triggered before the class is added
+ *     beforeAddClass: function(element, className, done) { },
+ *
+ *     //animation that can be triggered after the class is added
+ *     addClass: function(element, className, done) { },
+ *
+ *     //animation that can be triggered before the class is removed
+ *     beforeRemoveClass: function(element, className, done) { },
+ *
+ *     //animation that can be triggered after the class is removed
+ *     removeClass: function(element, className, done) { }
+ *   };
+ * });
+ * </pre>
+ *
+ * JavaScript-defined animations are created with a CSS-like class selector and a collection of events which are set to run
+ * a javascript callback function. When an animation is triggered, $animate will look for a matching animation which fits
+ * the element's CSS class attribute value and then run the matching animation event function (if found).
+ * In other words, if the CSS classes present on the animated element match any of the JavaScript animations then the callback function will
+ * be executed. It should be also noted that only simple, single class selectors are allowed (compound class selectors are not supported).
+ *
+ * Within a JavaScript animation, an object containing various event callback animation functions is expected to be returned.
+ * As explained above, these callbacks are triggered based on the animation event. Therefore if an enter animation is run,
+ * and the JavaScript animation is found, then the enter callback will handle that animation (in addition to the CSS keyframe animation
+ * or transition code that is defined via a stylesheet).
+ *
+ */
+
+angular.module('ngAnimate', ['ng'])
+
+  /**
+   * @ngdoc object
+   * @name ngAnimate.$animateProvider
+   * @description
+   *
+   * The `$animateProvider` allows developers to register JavaScript animation event handlers directly inside of a module.
+   * When an animation is triggered, the $animate service will query the $animate service to find any animations that match
+   * the provided name value.
+   *
+   * Requires the {@link ngAnimate `ngAnimate`} module to be installed.
+   *
+   * Please visit the {@link ngAnimate `ngAnimate`} module overview page learn more about how to use animations in your application.
+   *
+   */
+  .config(['$provide', '$animateProvider', function($provide, $animateProvider) {
+    var noop = angular.noop;
+    var forEach = angular.forEach;
+    var selectors = $animateProvider.$$selectors;
+
+    var ELEMENT_NODE = 1;
+    var NG_ANIMATE_STATE = '$$ngAnimateState';
+    var NG_ANIMATE_CLASS_NAME = 'ng-animate';
+    var rootAnimateState = {running: true};
+
+    function extractElementNode(element) {
+      for(var i = 0; i < element.length; i++) {
+        var elm = element[i];
+        if(elm.nodeType == ELEMENT_NODE) {
+          return elm;
+        }
+      }
+    }
+
+    function isMatchingElement(elm1, elm2) {
+      return extractElementNode(elm1) == extractElementNode(elm2);
+    }
+
+    $provide.decorator('$animate', ['$delegate', '$injector', '$sniffer', '$rootElement', '$timeout', '$rootScope', '$document',
+                            function($delegate,   $injector,   $sniffer,   $rootElement,   $timeout,   $rootScope,   $document) {
+
+      $rootElement.data(NG_ANIMATE_STATE, rootAnimateState);
+
+      // disable animations during bootstrap, but once we bootstrapped, wait again
+      // for another digest until enabling animations. The reason why we digest twice
+      // is because all structural animations (enter, leave and move) all perform a
+      // post digest operation before animating. If we only wait for a single digest
+      // to pass then the structural animation would render its animation on page load.
+      // (which is what we're trying to avoid when the application first boots up.)
+      $rootScope.$$postDigest(function() {
+        $rootScope.$$postDigest(function() {
+          rootAnimateState.running = false;
+        });
+      });
+
+      var classNameFilter = $animateProvider.classNameFilter();
+      var isAnimatableClassName = !classNameFilter
+              ? function() { return true; }
+              : function(className) {
+                return classNameFilter.test(className);
+              };
+
+      function lookup(name) {
+        if (name) {
+          var matches = [],
+              flagMap = {},
+              classes = name.substr(1).split('.');
+
+          //the empty string value is the default animation
+          //operation which performs CSS transition and keyframe
+          //animations sniffing. This is always included for each
+          //element animation procedure if the browser supports
+          //transitions and/or keyframe animations
+          if ($sniffer.transitions || $sniffer.animations) {
+            classes.push('');
+          }
+
+          for(var i=0; i < classes.length; i++) {
+            var klass = classes[i],
+                selectorFactoryName = selectors[klass];
+            if(selectorFactoryName && !flagMap[klass]) {
+              matches.push($injector.get(selectorFactoryName));
+              flagMap[klass] = true;
+            }
+          }
+          return matches;
+        }
+      }
+
+      /**
+       * @ngdoc object
+       * @name ngAnimate.$animate
+       * @function
+       *
+       * @description
+       * The `$animate` service provides animation detection support while performing DOM operations (enter, leave and move) as well as during addClass and removeClass operations.
+       * When any of these operations are run, the $animate service
+       * will examine any JavaScript-defined animations (which are defined by using the $animateProvider provider object)
+       * as well as any CSS-defined animations against the CSS classes present on the element once the DOM operation is run.
+       *
+       * The `$animate` service is used behind the scenes with pre-existing directives and animation with these directives
+       * will work out of the box without any extra configuration.
+       *
+       * Requires the {@link ngAnimate `ngAnimate`} module to be installed.
+       *
+       * Please visit the {@link ngAnimate `ngAnimate`} module overview page learn more about how to use animations in your application.
+       *
+       */
+      return {
+        /**
+         * @ngdoc function
+         * @name ngAnimate.$animate#enter
+         * @methodOf ngAnimate.$animate
+         * @function
+         *
+         * @description
+         * Appends the element to the parentElement element that resides in the document and then runs the enter animation. Once
+         * the animation is started, the following CSS classes will be present on the element for the duration of the animation:
+         *
+         * Below is a breakdown of each step that occurs during enter animation:
+         *
+         * | Animation Step                                                                               | What the element class attribute looks like |
+         * |----------------------------------------------------------------------------------------------|---------------------------------------------|
+         * | 1. $animate.enter(...) is called                                                             | class="my-animation"                        |
+         * | 2. element is inserted into the parentElement element or beside the afterElement element     | class="my-animation"                        |
+         * | 3. $animate runs any JavaScript-defined animations on the element                            | class="my-animation ng-animate"             |
+         * | 4. the .ng-enter class is added to the element                                               | class="my-animation ng-animate ng-enter"    |
+         * | 5. $animate scans the element styles to get the CSS transition/animation duration and delay  | class="my-animation ng-animate ng-enter"    |
+         * | 6. $animate waits for 10ms (this performs a reflow)                                          | class="my-animation ng-animate ng-enter"    |
+         * | 7. the .ng-enter-active and .ng-animate-active classes are added (this triggers the CSS transition/animation) | class="my-animation ng-animate ng-animate-active ng-enter ng-enter-active" |
+         * | 8. $animate waits for X milliseconds for the animation to complete                           | class="my-animation ng-animate ng-animate-active ng-enter ng-enter-active" |
+         * | 9. The animation ends and all generated CSS classes are removed from the element             | class="my-animation"                        |
+         * | 10. The doneCallback() callback is fired (if provided)                                       | class="my-animation"                        |
+         *
+         * @param {jQuery/jqLite element} element the element that will be the focus of the enter animation
+         * @param {jQuery/jqLite element} parentElement the parent element of the element that will be the focus of the enter animation
+         * @param {jQuery/jqLite element} afterElement the sibling element (which is the previous element) of the element that will be the focus of the enter animation
+         * @param {function()=} doneCallback the callback function that will be called once the animation is complete
+        */
+        enter : function(element, parentElement, afterElement, doneCallback) {
+          this.enabled(false, element);
+          $delegate.enter(element, parentElement, afterElement);
+          $rootScope.$$postDigest(function() {
+            performAnimation('enter', 'ng-enter', element, parentElement, afterElement, noop, doneCallback);
+          });
+        },
+
+        /**
+         * @ngdoc function
+         * @name ngAnimate.$animate#leave
+         * @methodOf ngAnimate.$animate
+         * @function
+         *
+         * @description
+         * Runs the leave animation operation and, upon completion, removes the element from the DOM. Once
+         * the animation is started, the following CSS classes will be added for the duration of the animation:
+         *
+         * Below is a breakdown of each step that occurs during leave animation:
+         *
+         * | Animation Step                                                                               | What the element class attribute looks like |
+         * |----------------------------------------------------------------------------------------------|---------------------------------------------|
+         * | 1. $animate.leave(...) is called                                                             | class="my-animation"                        |
+         * | 2. $animate runs any JavaScript-defined animations on the element                            | class="my-animation ng-animate"             |
+         * | 3. the .ng-leave class is added to the element                                               | class="my-animation ng-animate ng-leave"    |
+         * | 4. $animate scans the element styles to get the CSS transition/animation duration and delay  | class="my-animation ng-animate ng-leave"    |
+         * | 5. $animate waits for 10ms (this performs a reflow)                                          | class="my-animation ng-animate ng-leave"    |
+         * | 6. the .ng-leave-active and .ng-animate-active classes is added (this triggers the CSS transition/animation) | class="my-animation ng-animate ng-animate-active ng-leave ng-leave-active" |
+         * | 7. $animate waits for X milliseconds for the animation to complete                           | class="my-animation ng-animate ng-animate-active ng-leave ng-leave-active" |
+         * | 8. The animation ends and all generated CSS classes are removed from the element             | class="my-animation"                        |
+         * | 9. The element is removed from the DOM                                                       | ...                                         |
+         * | 10. The doneCallback() callback is fired (if provided)                                       | ...                                         |
+         *
+         * @param {jQuery/jqLite element} element the element that will be the focus of the leave animation
+         * @param {function()=} doneCallback the callback function that will be called once the animation is complete
+        */
+        leave : function(element, doneCallback) {
+          cancelChildAnimations(element);
+          this.enabled(false, element);
+          $rootScope.$$postDigest(function() {
+            performAnimation('leave', 'ng-leave', element, null, null, function() {
+              $delegate.leave(element);
+            }, doneCallback);
+          });
+        },
+
+        /**
+         * @ngdoc function
+         * @name ngAnimate.$animate#move
+         * @methodOf ngAnimate.$animate
+         * @function
+         *
+         * @description
+         * Fires the move DOM operation. Just before the animation starts, the animate service will either append it into the parentElement container or
+         * add the element directly after the afterElement element if present. Then the move animation will be run. Once
+         * the animation is started, the following CSS classes will be added for the duration of the animation:
+         *
+         * Below is a breakdown of each step that occurs during move animation:
+         *
+         * | Animation Step                                                                               | What the element class attribute looks like |
+         * |----------------------------------------------------------------------------------------------|---------------------------------------------|
+         * | 1. $animate.move(...) is called                                                              | class="my-animation"                        |
+         * | 2. element is moved into the parentElement element or beside the afterElement element        | class="my-animation"                        |
+         * | 3. $animate runs any JavaScript-defined animations on the element                            | class="my-animation ng-animate"             |
+         * | 4. the .ng-move class is added to the element                                                | class="my-animation ng-animate ng-move"     |
+         * | 5. $animate scans the element styles to get the CSS transition/animation duration and delay  | class="my-animation ng-animate ng-move"     |
+         * | 6. $animate waits for 10ms (this performs a reflow)                                          | class="my-animation ng-animate ng-move"     |
+         * | 7. the .ng-move-active and .ng-animate-active classes is added (this triggers the CSS transition/animation) | class="my-animation ng-animate ng-animate-active ng-move ng-move-active" |
+         * | 8. $animate waits for X milliseconds for the animation to complete                           | class="my-animation ng-animate ng-animate-active ng-move ng-move-active" |
+         * | 9. The animation ends and all generated CSS classes are removed from the element             | class="my-animation"                        |
+         * | 10. The doneCallback() callback is fired (if provided)                                       | class="my-animation"                        |
+         *
+         * @param {jQuery/jqLite element} element the element that will be the focus of the move animation
+         * @param {jQuery/jqLite element} parentElement the parentElement element of the element that will be the focus of the move animation
+         * @param {jQuery/jqLite element} afterElement the sibling element (which is the previous element) of the element that will be the focus of the move animation
+         * @param {function()=} doneCallback the callback function that will be called once the animation is complete
+        */
+        move : function(element, parentElement, afterElement, doneCallback) {
+          cancelChildAnimations(element);
+          this.enabled(false, element);
+          $delegate.move(element, parentElement, afterElement);
+          $rootScope.$$postDigest(function() {
+            performAnimation('move', 'ng-move', element, parentElement, afterElement, noop, doneCallback);
+          });
+        },
+
+        /**
+         * @ngdoc function
+         * @name ngAnimate.$animate#addClass
+         * @methodOf ngAnimate.$animate
+         *
+         * @description
+         * Triggers a custom animation event based off the className variable and then attaches the className value to the element as a CSS class.
+         * Unlike the other animation methods, the animate service will suffix the className value with {@type -add} in order to provide
+         * the animate service the setup and active CSS classes in order to trigger the animation (this will be skipped if no CSS transitions
+         * or keyframes are defined on the -add or base CSS class).
+         *
+         * Below is a breakdown of each step that occurs during addClass animation:
+         *
+         * | Animation Step                                                                                 | What the element class attribute looks like |
+         * |------------------------------------------------------------------------------------------------|---------------------------------------------|
+         * | 1. $animate.addClass(element, 'super') is called                                               | class="my-animation"                        |
+         * | 2. $animate runs any JavaScript-defined animations on the element                              | class="my-animation ng-animate"             |
+         * | 3. the .super-add class are added to the element                                               | class="my-animation ng-animate super-add"   |
+         * | 4. $animate scans the element styles to get the CSS transition/animation duration and delay    | class="my-animation ng-animate super-add"   |
+         * | 5. $animate waits for 10ms (this performs a reflow)                                            | class="my-animation ng-animate super-add"   |
+         * | 6. the .super, .super-add-active and .ng-animate-active classes are added (this triggers the CSS transition/animation) | class="my-animation ng-animate ng-animate-active super super-add super-add-active"          |
+         * | 7. $animate waits for X milliseconds for the animation to complete                             | class="my-animation super-add super-add-active"  |
+         * | 8. The animation ends and all generated CSS classes are removed from the element               | class="my-animation super"                  |
+         * | 9. The super class is kept on the element                                                      | class="my-animation super"                  |
+         * | 10. The doneCallback() callback is fired (if provided)                                         | class="my-animation super"                  |
+         *
+         * @param {jQuery/jqLite element} element the element that will be animated
+         * @param {string} className the CSS class that will be added to the element and then animated
+         * @param {function()=} doneCallback the callback function that will be called once the animation is complete
+        */
+        addClass : function(element, className, doneCallback) {
+          performAnimation('addClass', className, element, null, null, function() {
+            $delegate.addClass(element, className);
+          }, doneCallback);
+        },
+
+        /**
+         * @ngdoc function
+         * @name ngAnimate.$animate#removeClass
+         * @methodOf ngAnimate.$animate
+         *
+         * @description
+         * Triggers a custom animation event based off the className variable and then removes the CSS class provided by the className value
+         * from the element. Unlike the other animation methods, the animate service will suffix the className value with {@type -remove} in
+         * order to provide the animate service the setup and active CSS classes in order to trigger the animation (this will be skipped if
+         * no CSS transitions or keyframes are defined on the -remove or base CSS classes).
+         *
+         * Below is a breakdown of each step that occurs during removeClass animation:
+         *
+         * | Animation Step                                                                                | What the element class attribute looks like     |
+         * |-----------------------------------------------------------------------------------------------|---------------------------------------------|
+         * | 1. $animate.removeClass(element, 'super') is called                                           | class="my-animation super"                  |
+         * | 2. $animate runs any JavaScript-defined animations on the element                             | class="my-animation super ng-animate"       |
+         * | 3. the .super-remove class are added to the element                                           | class="my-animation super ng-animate super-remove"|
+         * | 4. $animate scans the element styles to get the CSS transition/animation duration and delay   | class="my-animation super ng-animate super-remove"   |
+         * | 5. $animate waits for 10ms (this performs a reflow)                                           | class="my-animation super ng-animate super-remove"   |
+         * | 6. the .super-remove-active and .ng-animate-active classes are added and .super is removed (this triggers the CSS transition/animation) | class="my-animation ng-animate ng-animate-active super-remove super-remove-active"          |
+         * | 7. $animate waits for X milliseconds for the animation to complete                            | class="my-animation ng-animate ng-animate-active super-remove super-remove-active"   |
+         * | 8. The animation ends and all generated CSS classes are removed from the element              | class="my-animation"                        |
+         * | 9. The doneCallback() callback is fired (if provided)                                         | class="my-animation"                        |
+         *
+         *
+         * @param {jQuery/jqLite element} element the element that will be animated
+         * @param {string} className the CSS class that will be animated and then removed from the element
+         * @param {function()=} doneCallback the callback function that will be called once the animation is complete
+        */
+        removeClass : function(element, className, doneCallback) {
+          performAnimation('removeClass', className, element, null, null, function() {
+            $delegate.removeClass(element, className);
+          }, doneCallback);
+        },
+
+        /**
+         * @ngdoc function
+         * @name ngAnimate.$animate#enabled
+         * @methodOf ngAnimate.$animate
+         * @function
+         *
+         * @param {boolean=} value If provided then set the animation on or off.
+         * @param {jQuery/jqLite element=} element If provided then the element will be used to represent the enable/disable operation
+         * @return {boolean} Current animation state.
+         *
+         * @description
+         * Globally enables/disables animations.
+         *
+        */
+        enabled : function(value, element) {
+          switch(arguments.length) {
+            case 2:
+              if(value) {
+                cleanup(element);
+              } else {
+                var data = element.data(NG_ANIMATE_STATE) || {};
+                data.disabled = true;
+                element.data(NG_ANIMATE_STATE, data);
+              }
+            break;
+
+            case 1:
+              rootAnimateState.disabled = !value;
+            break;
+
+            default:
+              value = !rootAnimateState.disabled;
+            break;
+          }
+          return !!value;
+         }
+      };
+
+      /*
+        all animations call this shared animation triggering function internally.
+        The animationEvent variable refers to the JavaScript animation event that will be triggered
+        and the className value is the name of the animation that will be applied within the
+        CSS code. Element, parentElement and afterElement are provided DOM elements for the animation
+        and the onComplete callback will be fired once the animation is fully complete.
+      */
+      function performAnimation(animationEvent, className, element, parentElement, afterElement, domOperation, doneCallback) {
+        var currentClassName, classes, node = extractElementNode(element);
+        if(node) {
+          currentClassName = node.className;
+          classes = currentClassName + ' ' + className;
+        }
+
+        //transcluded directives may sometimes fire an animation using only comment nodes
+        //best to catch this early on to prevent any animation operations from occurring
+        if(!node || !isAnimatableClassName(classes)) {
+          fireDOMOperation();
+          closeAnimation();
+          return;
+        }
+
+        var animationLookup = (' ' + classes).replace(/\s+/g,'.');
+        if (!parentElement) {
+          parentElement = afterElement ? afterElement.parent() : element.parent();
+        }
+
+        var matches = lookup(animationLookup);
+        var isClassBased = animationEvent == 'addClass' || animationEvent == 'removeClass';
+        var ngAnimateState = element.data(NG_ANIMATE_STATE) || {};
+
+        //skip the animation if animations are disabled, a parent is already being animated,
+        //the element is not currently attached to the document body or then completely close
+        //the animation if any matching animations are not found at all.
+        //NOTE: IE8 + IE9 should close properly (run closeAnimation()) in case a NO animation is not found.
+        if (animationsDisabled(element, parentElement) || matches.length === 0) {
+          fireDOMOperation();
+          closeAnimation();
+          return;
+        }
+
+        var animations = [];
+        //only add animations if the currently running animation is not structural
+        //or if there is no animation running at all
+        if(!ngAnimateState.running || !(isClassBased && ngAnimateState.structural)) {
+          forEach(matches, function(animation) {
+            //add the animation to the queue to if it is allowed to be cancelled
+            if(!animation.allowCancel || animation.allowCancel(element, animationEvent, className)) {
+              var beforeFn, afterFn = animation[animationEvent];
+
+              //Special case for a leave animation since there is no point in performing an
+              //animation on a element node that has already been removed from the DOM
+              if(animationEvent == 'leave') {
+                beforeFn = afterFn;
+                afterFn = null; //this must be falsy so that the animation is skipped for leave
+              } else {
+                beforeFn = animation['before' + animationEvent.charAt(0).toUpperCase() + animationEvent.substr(1)];
+              }
+              animations.push({
+                before : beforeFn,
+                after : afterFn
+              });
+            }
+          });
+        }
+
+        //this would mean that an animation was not allowed so let the existing
+        //animation do it's thing and close this one early
+        if(animations.length === 0) {
+          fireDOMOperation();
+          fireDoneCallbackAsync();
+          return;
+        }
+
+        //this value will be searched for class-based CSS className lookup. Therefore,
+        //we prefix and suffix the current className value with spaces to avoid substring
+        //lookups of className tokens
+        var futureClassName = ' ' + currentClassName + ' ';
+        if(ngAnimateState.running) {
+          //if an animation is currently running on the element then lets take the steps
+          //to cancel that animation and fire any required callbacks
+          $timeout.cancel(ngAnimateState.closeAnimationTimeout);
+          cleanup(element);
+          cancelAnimations(ngAnimateState.animations);
+
+          //if the class is removed during the reflow then it will revert the styles temporarily
+          //back to the base class CSS styling causing a jump-like effect to occur. This check
+          //here ensures that the domOperation is only performed after the reflow has commenced
+          if(ngAnimateState.beforeComplete) {
+            (ngAnimateState.done || noop)(true);
+          } else if(isClassBased && !ngAnimateState.structural) {
+            //class-based animations will compare element className values after cancelling the
+            //previous animation to see if the element properties already contain the final CSS
+            //class and if so then the animation will be skipped. Since the domOperation will
+            //be performed only after the reflow is complete then our element's className value
+            //will be invalid. Therefore the same string manipulation that would occur within the
+            //DOM operation will be performed below so that the class comparison is valid...
+            futureClassName = ngAnimateState.event == 'removeClass' ?
+              futureClassName.replace(ngAnimateState.className, '') :
+              futureClassName + ngAnimateState.className + ' ';
+          }
+        }
+
+        //There is no point in perform a class-based animation if the element already contains
+        //(on addClass) or doesn't contain (on removeClass) the className being animated.
+        //The reason why this is being called after the previous animations are cancelled
+        //is so that the CSS classes present on the element can be properly examined.
+        var classNameToken = ' ' + className + ' ';
+        if((animationEvent == 'addClass'    && futureClassName.indexOf(classNameToken) >= 0) ||
+           (animationEvent == 'removeClass' && futureClassName.indexOf(classNameToken) == -1)) {
+          fireDOMOperation();
+          fireDoneCallbackAsync();
+          return;
+        }
+
+        //the ng-animate class does nothing, but it's here to allow for
+        //parent animations to find and cancel child animations when needed
+        element.addClass(NG_ANIMATE_CLASS_NAME);
+
+        element.data(NG_ANIMATE_STATE, {
+          running:true,
+          event:animationEvent,
+          className:className,
+          structural:!isClassBased,
+          animations:animations,
+          done:onBeforeAnimationsComplete
+        });
+
+        //first we run the before animations and when all of those are complete
+        //then we perform the DOM operation and run the next set of animations
+        invokeRegisteredAnimationFns(animations, 'before', onBeforeAnimationsComplete);
+
+        function onBeforeAnimationsComplete(cancelled) {
+          fireDOMOperation();
+          if(cancelled === true) {
+            closeAnimation();
+            return;
+          }
+
+          //set the done function to the final done function
+          //so that the DOM event won't be executed twice by accident
+          //if the after animation is cancelled as well
+          var data = element.data(NG_ANIMATE_STATE);
+          if(data) {
+            data.done = closeAnimation;
+            element.data(NG_ANIMATE_STATE, data);
+          }
+          invokeRegisteredAnimationFns(animations, 'after', closeAnimation);
+        }
+
+        function invokeRegisteredAnimationFns(animations, phase, allAnimationFnsComplete) {
+          var endFnName = phase + 'End';
+          forEach(animations, function(animation, index) {
+            var animationPhaseCompleted = function() {
+              progress(index, phase);
+            };
+
+            //there are no before functions for enter + move since the DOM
+            //operations happen before the performAnimation method fires
+            if(phase == 'before' && (animationEvent == 'enter' || animationEvent == 'move')) {
+              animationPhaseCompleted();
+              return;
+            }
+
+            if(animation[phase]) {
+              animation[endFnName] = isClassBased ?
+                animation[phase](element, className, animationPhaseCompleted) :
+                animation[phase](element, animationPhaseCompleted);
+            } else {
+              animationPhaseCompleted();
+            }
+          });
+
+          function progress(index, phase) {
+            var phaseCompletionFlag = phase + 'Complete';
+            var currentAnimation = animations[index];
+            currentAnimation[phaseCompletionFlag] = true;
+            (currentAnimation[endFnName] || noop)();
+
+            for(var i=0;i<animations.length;i++) {
+              if(!animations[i][phaseCompletionFlag]) return;
+            }
+
+            allAnimationFnsComplete();
+          }
+        }
+
+        function fireDoneCallbackAsync() {
+          doneCallback && $timeout(doneCallback, 0, false);
+        }
+
+        //it is less complicated to use a flag than managing and cancelling
+        //timeouts containing multiple callbacks.
+        function fireDOMOperation() {
+          if(!fireDOMOperation.hasBeenRun) {
+            fireDOMOperation.hasBeenRun = true;
+            domOperation();
+          }
+        }
+
+        function closeAnimation() {
+          if(!closeAnimation.hasBeenRun) {
+            closeAnimation.hasBeenRun = true;
+            var data = element.data(NG_ANIMATE_STATE);
+            if(data) {
+              /* only structural animations wait for reflow before removing an
+                 animation, but class-based animations don't. An example of this
+                 failing would be when a parent HTML tag has a ng-class attribute
+                 causing ALL directives below to skip animations during the digest */
+              if(isClassBased) {
+                cleanup(element);
+              } else {
+                data.closeAnimationTimeout = $timeout(function() {
+                  cleanup(element);
+                }, 0, false);
+                element.data(NG_ANIMATE_STATE, data);
+              }
+            }
+            fireDoneCallbackAsync();
+          }
+        }
+      }
+
+      function cancelChildAnimations(element) {
+        var node = extractElementNode(element);
+        forEach(node.querySelectorAll('.' + NG_ANIMATE_CLASS_NAME), function(element) {
+          element = angular.element(element);
+          var data = element.data(NG_ANIMATE_STATE);
+          if(data) {
+            cancelAnimations(data.animations);
+            cleanup(element);
+          }
+        });
+      }
+
+      function cancelAnimations(animations) {
+        var isCancelledFlag = true;
+        forEach(animations, function(animation) {
+          if(!animations.beforeComplete) {
+            (animation.beforeEnd || noop)(isCancelledFlag);
+          }
+          if(!animations.afterComplete) {
+            (animation.afterEnd || noop)(isCancelledFlag);
+          }
+        });
+      }
+
+      function cleanup(element) {
+        if(isMatchingElement(element, $rootElement)) {
+          if(!rootAnimateState.disabled) {
+            rootAnimateState.running = false;
+            rootAnimateState.structural = false;
+          }
+        } else {
+          element.removeClass(NG_ANIMATE_CLASS_NAME);
+          element.removeData(NG_ANIMATE_STATE);
+        }
+      }
+
+      function animationsDisabled(element, parentElement) {
+        if (rootAnimateState.disabled) return true;
+
+        if(isMatchingElement(element, $rootElement)) {
+          return rootAnimateState.disabled || rootAnimateState.running;
+        }
+
+        do {
+          //the element did not reach the root element which means that it
+          //is not apart of the DOM. Therefore there is no reason to do
+          //any animations on it
+          if(parentElement.length === 0) break;
+
+          var isRoot = isMatchingElement(parentElement, $rootElement);
+          var state = isRoot ? rootAnimateState : parentElement.data(NG_ANIMATE_STATE);
+          var result = state && (!!state.disabled || !!state.running);
+          if(isRoot || result) {
+            return result;
+          }
+
+          if(isRoot) return true;
+        }
+        while(parentElement = parentElement.parent());
+
+        return true;
+      }
+    }]);
+
+    $animateProvider.register('', ['$window', '$sniffer', '$timeout', function($window, $sniffer, $timeout) {
+      // Detect proper transitionend/animationend event names.
+      var CSS_PREFIX = '', TRANSITION_PROP, TRANSITIONEND_EVENT, ANIMATION_PROP, ANIMATIONEND_EVENT;
+
+      // If unprefixed events are not supported but webkit-prefixed are, use the latter.
+      // Otherwise, just use W3C names, browsers not supporting them at all will just ignore them.
+      // Note: Chrome implements `window.onwebkitanimationend` and doesn't implement `window.onanimationend`
+      // but at the same time dispatches the `animationend` event and not `webkitAnimationEnd`.
+      // Register both events in case `window.onanimationend` is not supported because of that,
+      // do the same for `transitionend` as Safari is likely to exhibit similar behavior.
+      // Also, the only modern browser that uses vendor prefixes for transitions/keyframes is webkit
+      // therefore there is no reason to test anymore for other vendor prefixes: http://caniuse.com/#search=transition
+      if (window.ontransitionend === undefined && window.onwebkittransitionend !== undefined) {
+        CSS_PREFIX = '-webkit-';
+        TRANSITION_PROP = 'WebkitTransition';
+        TRANSITIONEND_EVENT = 'webkitTransitionEnd transitionend';
+      } else {
+        TRANSITION_PROP = 'transition';
+        TRANSITIONEND_EVENT = 'transitionend';
+      }
+
+      if (window.onanimationend === undefined && window.onwebkitanimationend !== undefined) {
+        CSS_PREFIX = '-webkit-';
+        ANIMATION_PROP = 'WebkitAnimation';
+        ANIMATIONEND_EVENT = 'webkitAnimationEnd animationend';
+      } else {
+        ANIMATION_PROP = 'animation';
+        ANIMATIONEND_EVENT = 'animationend';
+      }
+
+      var DURATION_KEY = 'Duration';
+      var PROPERTY_KEY = 'Property';
+      var DELAY_KEY = 'Delay';
+      var ANIMATION_ITERATION_COUNT_KEY = 'IterationCount';
+      var NG_ANIMATE_PARENT_KEY = '$$ngAnimateKey';
+      var NG_ANIMATE_CSS_DATA_KEY = '$$ngAnimateCSS3Data';
+      var ELAPSED_TIME_MAX_DECIMAL_PLACES = 3;
+      var CLOSING_TIME_BUFFER = 1.5;
+      var ONE_SECOND = 1000;
+
+      var animationCounter = 0;
+      var lookupCache = {};
+      var parentCounter = 0;
+      var animationReflowQueue = [];
+      var animationElementQueue = [];
+      var animationTimer;
+      var closingAnimationTime = 0;
+      var timeOut = false;
+      function afterReflow(element, callback) {
+        $timeout.cancel(animationTimer);
+
+        animationReflowQueue.push(callback);
+
+        var node = extractElementNode(element);
+        element = angular.element(node);
+        animationElementQueue.push(element);
+
+        var elementData = element.data(NG_ANIMATE_CSS_DATA_KEY);
+        closingAnimationTime = Math.max(closingAnimationTime,
+          (elementData.maxDelay + elementData.maxDuration) * CLOSING_TIME_BUFFER * ONE_SECOND);
+
+        //by placing a counter we can avoid an accidental
+        //race condition which may close an animation when
+        //a follow-up animation is midway in its animation
+        elementData.animationCount = animationCounter;
+
+        animationTimer = $timeout(function() {
+          forEach(animationReflowQueue, function(fn) {
+            fn();
+          });
+
+          //copy the list of elements so that successive
+          //animations won't conflict if they're added before
+          //the closing animation timeout has run
+          var elementQueueSnapshot = [];
+          var animationCounterSnapshot = animationCounter;
+          forEach(animationElementQueue, function(elm) {
+            elementQueueSnapshot.push(elm);
+          });
+
+          $timeout(function() {
+            closeAllAnimations(elementQueueSnapshot, animationCounterSnapshot);
+            elementQueueSnapshot = null;
+          }, closingAnimationTime, false);
+
+          animationReflowQueue = [];
+          animationElementQueue = [];
+          animationTimer = null;
+          lookupCache = {};
+          closingAnimationTime = 0;
+          animationCounter++;
+        }, 10, false);
+      }
+
+      function closeAllAnimations(elements, count) {
+        forEach(elements, function(element) {
+          var elementData = element.data(NG_ANIMATE_CSS_DATA_KEY);
+          if(elementData && elementData.animationCount == count) {
+            (elementData.closeAnimationFn || noop)();
+          }
+        });
+      }
+
+      function getElementAnimationDetails(element, cacheKey) {
+        var data = cacheKey ? lookupCache[cacheKey] : null;
+        if(!data) {
+          var transitionDuration = 0;
+          var transitionDelay = 0;
+          var animationDuration = 0;
+          var animationDelay = 0;
+          var transitionDelayStyle;
+          var animationDelayStyle;
+          var transitionDurationStyle;
+          var transitionPropertyStyle;
+
+          //we want all the styles defined before and after
+          forEach(element, function(element) {
+            if (element.nodeType == ELEMENT_NODE) {
+              var elementStyles = $window.getComputedStyle(element) || {};
+
+              transitionDurationStyle = elementStyles[TRANSITION_PROP + DURATION_KEY];
+
+              transitionDuration = Math.max(parseMaxTime(transitionDurationStyle), transitionDuration);
+
+              transitionPropertyStyle = elementStyles[TRANSITION_PROP + PROPERTY_KEY];
+
+              transitionDelayStyle = elementStyles[TRANSITION_PROP + DELAY_KEY];
+
+              transitionDelay  = Math.max(parseMaxTime(transitionDelayStyle), transitionDelay);
+
+              animationDelayStyle = elementStyles[ANIMATION_PROP + DELAY_KEY];
+
+              animationDelay   = Math.max(parseMaxTime(animationDelayStyle), animationDelay);
+
+              var aDuration  = parseMaxTime(elementStyles[ANIMATION_PROP + DURATION_KEY]);
+
+              if(aDuration > 0) {
+                aDuration *= parseInt(elementStyles[ANIMATION_PROP + ANIMATION_ITERATION_COUNT_KEY], 10) || 1;
+              }
+
+              animationDuration = Math.max(aDuration, animationDuration);
+            }
+          });
+          data = {
+            total : 0,
+            transitionPropertyStyle: transitionPropertyStyle,
+            transitionDurationStyle: transitionDurationStyle,
+            transitionDelayStyle: transitionDelayStyle,
+            transitionDelay: transitionDelay,
+            transitionDuration: transitionDuration,
+            animationDelayStyle: animationDelayStyle,
+            animationDelay: animationDelay,
+            animationDuration: animationDuration
+          };
+          if(cacheKey) {
+            lookupCache[cacheKey] = data;
+          }
+        }
+        return data;
+      }
+
+      function parseMaxTime(str) {
+        var maxValue = 0;
+        var values = angular.isString(str) ?
+          str.split(/\s*,\s*/) :
+          [];
+        forEach(values, function(value) {
+          maxValue = Math.max(parseFloat(value) || 0, maxValue);
+        });
+        return maxValue;
+      }
+
+      function getCacheKey(element) {
+        var parentElement = element.parent();
+        var parentID = parentElement.data(NG_ANIMATE_PARENT_KEY);
+        if(!parentID) {
+          parentElement.data(NG_ANIMATE_PARENT_KEY, ++parentCounter);
+          parentID = parentCounter;
+        }
+        return parentID + '-' + extractElementNode(element).className;
+      }
+
+      function animateSetup(element, className) {
+        var cacheKey = getCacheKey(element);
+        var eventCacheKey = cacheKey + ' ' + className;
+        var stagger = {};
+        var ii = lookupCache[eventCacheKey] ? ++lookupCache[eventCacheKey].total : 0;
+
+        if(ii > 0) {
+          var staggerClassName = className + '-stagger';
+          var staggerCacheKey = cacheKey + ' ' + staggerClassName;
+          var applyClasses = !lookupCache[staggerCacheKey];
+
+          applyClasses && element.addClass(staggerClassName);
+
+          stagger = getElementAnimationDetails(element, staggerCacheKey);
+
+          applyClasses && element.removeClass(staggerClassName);
+        }
+
+        element.addClass(className);
+
+        var timings = getElementAnimationDetails(element, eventCacheKey);
+
+        /* there is no point in performing a reflow if the animation
+           timeout is empty (this would cause a flicker bug normally
+           in the page. There is also no point in performing an animation
+           that only has a delay and no duration */
+        var maxDelay = Math.max(timings.transitionDelay, timings.animationDelay);
+        var maxDuration = Math.max(timings.transitionDuration, timings.animationDuration);
+        if(maxDuration === 0) {
+          element.removeClass(className);
+          return false;
+        }
+
+        //temporarily disable the transition so that the enter styles
+        //don't animate twice (this is here to avoid a bug in Chrome/FF).
+        var activeClassName = '';
+        timings.transitionDuration > 0 ?
+          blockTransitions(element) :
+          blockKeyframeAnimations(element);
+
+        forEach(className.split(' '), function(klass, i) {
+          activeClassName += (i > 0 ? ' ' : '') + klass + '-active';
+        });
+
+        element.data(NG_ANIMATE_CSS_DATA_KEY, {
+          className : className,
+          activeClassName : activeClassName,
+          maxDuration : maxDuration,
+          maxDelay : maxDelay,
+          classes : className + ' ' + activeClassName,
+          timings : timings,
+          stagger : stagger,
+          ii : ii
+        });
+
+        return true;
+      }
+
+      function blockTransitions(element) {
+        extractElementNode(element).style[TRANSITION_PROP + PROPERTY_KEY] = 'none';
+      }
+
+      function blockKeyframeAnimations(element) {
+        extractElementNode(element).style[ANIMATION_PROP] = 'none 0s';
+      }
+
+      function unblockTransitions(element) {
+        var prop = TRANSITION_PROP + PROPERTY_KEY;
+        var node = extractElementNode(element);
+        if(node.style[prop] && node.style[prop].length > 0) {
+          node.style[prop] = '';
+        }
+      }
+
+      function unblockKeyframeAnimations(element) {
+        var prop = ANIMATION_PROP;
+        var node = extractElementNode(element);
+        if(node.style[prop] && node.style[prop].length > 0) {
+          node.style[prop] = '';
+        }
+      }
+
+      function animateRun(element, className, activeAnimationComplete) {
+        var elementData = element.data(NG_ANIMATE_CSS_DATA_KEY);
+        var node = extractElementNode(element);
+        if(node.className.indexOf(className) == -1 || !elementData) {
+          activeAnimationComplete();
+          return;
+        }
+
+        var timings = elementData.timings;
+        var stagger = elementData.stagger;
+        var maxDuration = elementData.maxDuration;
+        var activeClassName = elementData.activeClassName;
+        var maxDelayTime = Math.max(timings.transitionDelay, timings.animationDelay) * ONE_SECOND;
+        var startTime = Date.now();
+        var css3AnimationEvents = ANIMATIONEND_EVENT + ' ' + TRANSITIONEND_EVENT;
+        var ii = elementData.ii;
+
+        var style = '', appliedStyles = [];
+        if(timings.transitionDuration > 0) {
+          var propertyStyle = timings.transitionPropertyStyle;
+          if(propertyStyle.indexOf('all') == -1) {
+            style += CSS_PREFIX + 'transition-property: ' + propertyStyle + ';';
+            style += CSS_PREFIX + 'transition-duration: ' + timings.transitionDurationStyle + 's;';
+            appliedStyles.push(CSS_PREFIX + 'transition-property');
+            appliedStyles.push(CSS_PREFIX + 'transition-duration');
+          }
+        }
+
+        if(ii > 0) {
+          if(stagger.transitionDelay > 0 && stagger.transitionDuration === 0) {
+            var delayStyle = timings.transitionDelayStyle;
+            style += CSS_PREFIX + 'transition-delay: ' +
+                     prepareStaggerDelay(delayStyle, stagger.transitionDelay, ii) + '; ';
+            appliedStyles.push(CSS_PREFIX + 'transition-delay');
+          }
+
+          if(stagger.animationDelay > 0 && stagger.animationDuration === 0) {
+            style += CSS_PREFIX + 'animation-delay: ' +
+                     prepareStaggerDelay(timings.animationDelayStyle, stagger.animationDelay, ii) + '; ';
+            appliedStyles.push(CSS_PREFIX + 'animation-delay');
+          }
+        }
+
+        if(appliedStyles.length > 0) {
+          //the element being animated may sometimes contain comment nodes in
+          //the jqLite object, so we're safe to use a single variable to house
+          //the styles since there is always only one element being animated
+          var oldStyle = node.getAttribute('style') || '';
+          node.setAttribute('style', oldStyle + ' ' + style);
+        }
+
+        element.on(css3AnimationEvents, onAnimationProgress);
+        element.addClass(activeClassName);
+        elementData.closeAnimationFn = function() {
+          onEnd();
+          activeAnimationComplete();
+        };
+        return onEnd;
+
+        // This will automatically be called by $animate so
+        // there is no need to attach this internally to the
+        // timeout done method.
+        function onEnd(cancelled) {
+          element.off(css3AnimationEvents, onAnimationProgress);
+          element.removeClass(activeClassName);
+          animateClose(element, className);
+          var node = extractElementNode(element);
+          for (var i in appliedStyles) {
+            node.style.removeProperty(appliedStyles[i]);
+          }
+        }
+
+        function onAnimationProgress(event) {
+          event.stopPropagation();
+          var ev = event.originalEvent || event;
+          var timeStamp = ev.$manualTimeStamp || ev.timeStamp || Date.now();
+          
+          /* Firefox (or possibly just Gecko) likes to not round values up
+           * when a ms measurement is used for the animation */
+          var elapsedTime = parseFloat(ev.elapsedTime.toFixed(ELAPSED_TIME_MAX_DECIMAL_PLACES));
+
+          /* $manualTimeStamp is a mocked timeStamp value which is set
+           * within browserTrigger(). This is only here so that tests can
+           * mock animations properly. Real events fallback to event.timeStamp,
+           * or, if they don't, then a timeStamp is automatically created for them.
+           * We're checking to see if the timeStamp surpasses the expected delay,
+           * but we're using elapsedTime instead of the timeStamp on the 2nd
+           * pre-condition since animations sometimes close off early */
+          if(Math.max(timeStamp - startTime, 0) >= maxDelayTime && elapsedTime >= maxDuration) {
+            activeAnimationComplete();
+          }
+        }
+      }
+
+      function prepareStaggerDelay(delayStyle, staggerDelay, index) {
+        var style = '';
+        forEach(delayStyle.split(','), function(val, i) {
+          style += (i > 0 ? ',' : '') +
+                   (index * staggerDelay + parseInt(val, 10)) + 's';
+        });
+        return style;
+      }
+
+      function animateBefore(element, className) {
+        if(animateSetup(element, className)) {
+          return function(cancelled) {
+            cancelled && animateClose(element, className);
+          };
+        }
+      }
+
+      function animateAfter(element, className, afterAnimationComplete) {
+        if(element.data(NG_ANIMATE_CSS_DATA_KEY)) {
+          return animateRun(element, className, afterAnimationComplete);
+        } else {
+          animateClose(element, className);
+          afterAnimationComplete();
+        }
+      }
+
+      function animate(element, className, animationComplete) {
+        //If the animateSetup function doesn't bother returning a
+        //cancellation function then it means that there is no animation
+        //to perform at all
+        var preReflowCancellation = animateBefore(element, className);
+        if(!preReflowCancellation) {
+          animationComplete();
+          return;
+        }
+
+        //There are two cancellation functions: one is before the first
+        //reflow animation and the second is during the active state
+        //animation. The first function will take care of removing the
+        //data from the element which will not make the 2nd animation
+        //happen in the first place
+        var cancel = preReflowCancellation;
+        afterReflow(element, function() {
+          unblockTransitions(element);
+          unblockKeyframeAnimations(element);
+          //once the reflow is complete then we point cancel to
+          //the new cancellation function which will remove all of the
+          //animation properties from the active animation
+          cancel = animateAfter(element, className, animationComplete);
+        });
+
+        return function(cancelled) {
+          (cancel || noop)(cancelled);
+        };
+      }
+
+      function animateClose(element, className) {
+        element.removeClass(className);
+        element.removeData(NG_ANIMATE_CSS_DATA_KEY);
+      }
+
+      return {
+        allowCancel : function(element, animationEvent, className) {
+          //always cancel the current animation if it is a
+          //structural animation
+          var oldClasses = (element.data(NG_ANIMATE_CSS_DATA_KEY) || {}).classes;
+          if(!oldClasses || ['enter','leave','move'].indexOf(animationEvent) >= 0) {
+            return true;
+          }
+
+          var parentElement = element.parent();
+          var clone = angular.element(extractElementNode(element).cloneNode());
+
+          //make the element super hidden and override any CSS style values
+          clone.attr('style','position:absolute; top:-9999px; left:-9999px');
+          clone.removeAttr('id');
+          clone.empty();
+
+          forEach(oldClasses.split(' '), function(klass) {
+            clone.removeClass(klass);
+          });
+
+          var suffix = animationEvent == 'addClass' ? '-add' : '-remove';
+          clone.addClass(suffixClasses(className, suffix));
+          parentElement.append(clone);
+
+          var timings = getElementAnimationDetails(clone);
+          clone.remove();
+
+          return Math.max(timings.transitionDuration, timings.animationDuration) > 0;
+        },
+
+        enter : function(element, animationCompleted) {
+          return animate(element, 'ng-enter', animationCompleted);
+        },
+
+        leave : function(element, animationCompleted) {
+          return animate(element, 'ng-leave', animationCompleted);
+        },
+
+        move : function(element, animationCompleted) {
+          return animate(element, 'ng-move', animationCompleted);
+        },
+
+        beforeAddClass : function(element, className, animationCompleted) {
+          var cancellationMethod = animateBefore(element, suffixClasses(className, '-add'));
+          if(cancellationMethod) {
+            afterReflow(element, function() {
+              unblockTransitions(element);
+              unblockKeyframeAnimations(element);
+              animationCompleted();
+            });
+            return cancellationMethod;
+          }
+          animationCompleted();
+        },
+
+        addClass : function(element, className, animationCompleted) {
+          return animateAfter(element, suffixClasses(className, '-add'), animationCompleted);
+        },
+
+        beforeRemoveClass : function(element, className, animationCompleted) {
+          var cancellationMethod = animateBefore(element, suffixClasses(className, '-remove'));
+          if(cancellationMethod) {
+            afterReflow(element, function() {
+              unblockTransitions(element);
+              unblockKeyframeAnimations(element);
+              animationCompleted();
+            });
+            return cancellationMethod;
+          }
+          animationCompleted();
+        },
+
+        removeClass : function(element, className, animationCompleted) {
+          return animateAfter(element, suffixClasses(className, '-remove'), animationCompleted);
+        }
+      };
+
+      function suffixClasses(classes, suffix) {
+        var className = '';
+        classes = angular.isArray(classes) ? classes : classes.split(/\s+/);
+        forEach(classes, function(klass, i) {
+          if(klass && klass.length > 0) {
+            className += (i > 0 ? ' ' : '') + klass + suffix;
+          }
+        });
+        return className;
+      }
+    }]);
+  }]);
+
+
+})(window, window.angular);
+
+/**
+ * @license AngularJS v1.2.7-build.2025+sha.d1c4766
+ * (c) 2010-2014 Google, Inc. http://angularjs.org
+ * License: MIT
+ */
+(function(window, angular, undefined) {'use strict';
+
+/**
+ * @ngdoc overview
+ * @name ngTouch
+ * @description
+ *
+ * # ngTouch
+ *
+ * The `ngTouch` module provides touch events and other helpers for touch-enabled devices.
+ * The implementation is based on jQuery Mobile touch event handling 
+ * ([jquerymobile.com](http://jquerymobile.com/)).
+ *
+ * {@installModule touch}
+ *
+ * See {@link ngTouch.$swipe `$swipe`} for usage.
+ *
+ * <div doc-module-components="ngTouch"></div>
+ *
+ */
+
+// define ngTouch module
+/* global -ngTouch */
+var ngTouch = angular.module('ngTouch', []);
+
+/* global ngTouch: false */
+
+    /**
+     * @ngdoc object
+     * @name ngTouch.$swipe
+     *
+     * @description
+     * The `$swipe` service is a service that abstracts the messier details of hold-and-drag swipe
+     * behavior, to make implementing swipe-related directives more convenient.
+     *
+     * Requires the {@link ngTouch `ngTouch`} module to be installed.
+     *
+     * `$swipe` is used by the `ngSwipeLeft` and `ngSwipeRight` directives in `ngTouch`, and by
+     * `ngCarousel` in a separate component.
+     *
+     * # Usage
+     * The `$swipe` service is an object with a single method: `bind`. `bind` takes an element
+     * which is to be watched for swipes, and an object with four handler functions. See the
+     * documentation for `bind` below.
+     */
+
+ngTouch.factory('$swipe', [function() {
+  // The total distance in any direction before we make the call on swipe vs. scroll.
+  var MOVE_BUFFER_RADIUS = 10;
+
+  function getCoordinates(event) {
+    var touches = event.touches && event.touches.length ? event.touches : [event];
+    var e = (event.changedTouches && event.changedTouches[0]) ||
+        (event.originalEvent && event.originalEvent.changedTouches &&
+            event.originalEvent.changedTouches[0]) ||
+        touches[0].originalEvent || touches[0];
+
+    return {
+      x: e.clientX,
+      y: e.clientY
+    };
+  }
+
+  return {
+    /**
+     * @ngdoc method
+     * @name ngTouch.$swipe#bind
+     * @methodOf ngTouch.$swipe
+     *
+     * @description
+     * The main method of `$swipe`. It takes an element to be watched for swipe motions, and an
+     * object containing event handlers.
+     *
+     * The four events are `start`, `move`, `end`, and `cancel`. `start`, `move`, and `end`
+     * receive as a parameter a coordinates object of the form `{ x: 150, y: 310 }`.
+     *
+     * `start` is called on either `mousedown` or `touchstart`. After this event, `$swipe` is
+     * watching for `touchmove` or `mousemove` events. These events are ignored until the total
+     * distance moved in either dimension exceeds a small threshold.
+     *
+     * Once this threshold is exceeded, either the horizontal or vertical delta is greater.
+     * - If the horizontal distance is greater, this is a swipe and `move` and `end` events follow.
+     * - If the vertical distance is greater, this is a scroll, and we let the browser take over.
+     *   A `cancel` event is sent.
+     *
+     * `move` is called on `mousemove` and `touchmove` after the above logic has determined that
+     * a swipe is in progress.
+     *
+     * `end` is called when a swipe is successfully completed with a `touchend` or `mouseup`.
+     *
+     * `cancel` is called either on a `touchcancel` from the browser, or when we begin scrolling
+     * as described above.
+     *
+     */
+    bind: function(element, eventHandlers) {
+      // Absolute total movement, used to control swipe vs. scroll.
+      var totalX, totalY;
+      // Coordinates of the start position.
+      var startCoords;
+      // Last event's position.
+      var lastPos;
+      // Whether a swipe is active.
+      var active = false;
+
+      element.on('touchstart mousedown', function(event) {
+        startCoords = getCoordinates(event);
+        active = true;
+        totalX = 0;
+        totalY = 0;
+        lastPos = startCoords;
+        eventHandlers['start'] && eventHandlers['start'](startCoords, event);
+      });
+
+      element.on('touchcancel', function(event) {
+        active = false;
+        eventHandlers['cancel'] && eventHandlers['cancel'](event);
+      });
+
+      element.on('touchmove mousemove', function(event) {
+        if (!active) return;
+
+        // Android will send a touchcancel if it thinks we're starting to scroll.
+        // So when the total distance (+ or - or both) exceeds 10px in either direction,
+        // we either:
+        // - On totalX > totalY, we send preventDefault() and treat this as a swipe.
+        // - On totalY > totalX, we let the browser handle it as a scroll.
+
+        if (!startCoords) return;
+        var coords = getCoordinates(event);
+
+        totalX += Math.abs(coords.x - lastPos.x);
+        totalY += Math.abs(coords.y - lastPos.y);
+
+        lastPos = coords;
+
+        if (totalX < MOVE_BUFFER_RADIUS && totalY < MOVE_BUFFER_RADIUS) {
+          return;
+        }
+
+        // One of totalX or totalY has exceeded the buffer, so decide on swipe vs. scroll.
+        if (totalY > totalX) {
+          // Allow native scrolling to take over.
+          active = false;
+          eventHandlers['cancel'] && eventHandlers['cancel'](event);
+          return;
+        } else {
+          // Prevent the browser from scrolling.
+          event.preventDefault();
+          eventHandlers['move'] && eventHandlers['move'](coords, event);
+        }
+      });
+
+      element.on('touchend mouseup', function(event) {
+        if (!active) return;
+        active = false;
+        eventHandlers['end'] && eventHandlers['end'](getCoordinates(event), event);
+      });
+    }
+  };
+}]);
+
+/* global ngTouch: false */
+
+/**
+ * @ngdoc directive
+ * @name ngTouch.directive:ngClick
+ *
+ * @description
+ * A more powerful replacement for the default ngClick designed to be used on touchscreen
+ * devices. Most mobile browsers wait about 300ms after a tap-and-release before sending
+ * the click event. This version handles them immediately, and then prevents the
+ * following click event from propagating.
+ *
+ * Requires the {@link ngTouch `ngTouch`} module to be installed.
+ *
+ * This directive can fall back to using an ordinary click event, and so works on desktop
+ * browsers as well as mobile.
+ *
+ * This directive also sets the CSS class `ng-click-active` while the element is being held
+ * down (by a mouse click or touch) so you can restyle the depressed element if you wish.
+ *
+ * @element ANY
+ * @param {expression} ngClick {@link guide/expression Expression} to evaluate
+ * upon tap. (Event object is available as `$event`)
+ *
+ * @example
+    <doc:example>
+      <doc:source>
+        <button ng-click="count = count + 1" ng-init="count=0">
+          Increment
+        </button>
+        count: {{ count }}
+      </doc:source>
+    </doc:example>
+ */
+
+ngTouch.config(['$provide', function($provide) {
+  $provide.decorator('ngClickDirective', ['$delegate', function($delegate) {
+    // drop the default ngClick directive
+    $delegate.shift();
+    return $delegate;
+  }]);
+}]);
+
+ngTouch.directive('ngClick', ['$parse', '$timeout', '$rootElement',
+    function($parse, $timeout, $rootElement) {
+  var TAP_DURATION = 750; // Shorter than 750ms is a tap, longer is a taphold or drag.
+  var MOVE_TOLERANCE = 12; // 12px seems to work in most mobile browsers.
+  var PREVENT_DURATION = 2500; // 2.5 seconds maximum from preventGhostClick call to click
+  var CLICKBUSTER_THRESHOLD = 25; // 25 pixels in any dimension is the limit for busting clicks.
+
+  var ACTIVE_CLASS_NAME = 'ng-click-active';
+  var lastPreventedTime;
+  var touchCoordinates;
+
+
+  // TAP EVENTS AND GHOST CLICKS
+  //
+  // Why tap events?
+  // Mobile browsers detect a tap, then wait a moment (usually ~300ms) to see if you're
+  // double-tapping, and then fire a click event.
+  //
+  // This delay sucks and makes mobile apps feel unresponsive.
+  // So we detect touchstart, touchmove, touchcancel and touchend ourselves and determine when
+  // the user has tapped on something.
+  //
+  // What happens when the browser then generates a click event?
+  // The browser, of course, also detects the tap and fires a click after a delay. This results in
+  // tapping/clicking twice. So we do "clickbusting" to prevent it.
+  //
+  // How does it work?
+  // We attach global touchstart and click handlers, that run during the capture (early) phase.
+  // So the sequence for a tap is:
+  // - global touchstart: Sets an "allowable region" at the point touched.
+  // - element's touchstart: Starts a touch
+  // (- touchmove or touchcancel ends the touch, no click follows)
+  // - element's touchend: Determines if the tap is valid (didn't move too far away, didn't hold
+  //   too long) and fires the user's tap handler. The touchend also calls preventGhostClick().
+  // - preventGhostClick() removes the allowable region the global touchstart created.
+  // - The browser generates a click event.
+  // - The global click handler catches the click, and checks whether it was in an allowable region.
+  //     - If preventGhostClick was called, the region will have been removed, the click is busted.
+  //     - If the region is still there, the click proceeds normally. Therefore clicks on links and
+  //       other elements without ngTap on them work normally.
+  //
+  // This is an ugly, terrible hack!
+  // Yeah, tell me about it. The alternatives are using the slow click events, or making our users
+  // deal with the ghost clicks, so I consider this the least of evils. Fortunately Angular
+  // encapsulates this ugly logic away from the user.
+  //
+  // Why not just put click handlers on the element?
+  // We do that too, just to be sure. The problem is that the tap event might have caused the DOM
+  // to change, so that the click fires in the same position but something else is there now. So
+  // the handlers are global and care only about coordinates and not elements.
+
+  // Checks if the coordinates are close enough to be within the region.
+  function hit(x1, y1, x2, y2) {
+    return Math.abs(x1 - x2) < CLICKBUSTER_THRESHOLD && Math.abs(y1 - y2) < CLICKBUSTER_THRESHOLD;
+  }
+
+  // Checks a list of allowable regions against a click location.
+  // Returns true if the click should be allowed.
+  // Splices out the allowable region from the list after it has been used.
+  function checkAllowableRegions(touchCoordinates, x, y) {
+    for (var i = 0; i < touchCoordinates.length; i += 2) {
+      if (hit(touchCoordinates[i], touchCoordinates[i+1], x, y)) {
+        touchCoordinates.splice(i, i + 2);
+        return true; // allowable region
+      }
+    }
+    return false; // No allowable region; bust it.
+  }
+
+  // Global click handler that prevents the click if it's in a bustable zone and preventGhostClick
+  // was called recently.
+  function onClick(event) {
+    if (Date.now() - lastPreventedTime > PREVENT_DURATION) {
+      return; // Too old.
+    }
+
+    var touches = event.touches && event.touches.length ? event.touches : [event];
+    var x = touches[0].clientX;
+    var y = touches[0].clientY;
+    // Work around desktop Webkit quirk where clicking a label will fire two clicks (on the label
+    // and on the input element). Depending on the exact browser, this second click we don't want
+    // to bust has either (0,0) or negative coordinates.
+    if (x < 1 && y < 1) {
+      return; // offscreen
+    }
+
+    // Look for an allowable region containing this click.
+    // If we find one, that means it was created by touchstart and not removed by
+    // preventGhostClick, so we don't bust it.
+    if (checkAllowableRegions(touchCoordinates, x, y)) {
+      return;
+    }
+
+    // If we didn't find an allowable region, bust the click.
+    event.stopPropagation();
+    event.preventDefault();
+
+    // Blur focused form elements
+    event.target && event.target.blur();
+  }
+
+
+  // Global touchstart handler that creates an allowable region for a click event.
+  // This allowable region can be removed by preventGhostClick if we want to bust it.
+  function onTouchStart(event) {
+    var touches = event.touches && event.touches.length ? event.touches : [event];
+    var x = touches[0].clientX;
+    var y = touches[0].clientY;
+    touchCoordinates.push(x, y);
+
+    $timeout(function() {
+      // Remove the allowable region.
+      for (var i = 0; i < touchCoordinates.length; i += 2) {
+        if (touchCoordinates[i] == x && touchCoordinates[i+1] == y) {
+          touchCoordinates.splice(i, i + 2);
+          return;
+        }
+      }
+    }, PREVENT_DURATION, false);
+  }
+
+  // On the first call, attaches some event handlers. Then whenever it gets called, it creates a
+  // zone around the touchstart where clicks will get busted.
+  function preventGhostClick(x, y) {
+    if (!touchCoordinates) {
+      $rootElement[0].addEventListener('click', onClick, true);
+      $rootElement[0].addEventListener('touchstart', onTouchStart, true);
+      touchCoordinates = [];
+    }
+
+    lastPreventedTime = Date.now();
+
+    checkAllowableRegions(touchCoordinates, x, y);
+  }
+
+  // Actual linking function.
+  return function(scope, element, attr) {
+    var clickHandler = $parse(attr.ngClick),
+        tapping = false,
+        tapElement,  // Used to blur the element after a tap.
+        startTime,   // Used to check if the tap was held too long.
+        touchStartX,
+        touchStartY;
+
+    function resetState() {
+      tapping = false;
+      element.removeClass(ACTIVE_CLASS_NAME);
+    }
+
+    element.on('touchstart', function(event) {
+      tapping = true;
+      tapElement = event.target ? event.target : event.srcElement; // IE uses srcElement.
+      // Hack for Safari, which can target text nodes instead of containers.
+      if(tapElement.nodeType == 3) {
+        tapElement = tapElement.parentNode;
+      }
+
+      element.addClass(ACTIVE_CLASS_NAME);
+
+      startTime = Date.now();
+
+      var touches = event.touches && event.touches.length ? event.touches : [event];
+      var e = touches[0].originalEvent || touches[0];
+      touchStartX = e.clientX;
+      touchStartY = e.clientY;
+    });
+
+    element.on('touchmove', function(event) {
+      resetState();
+    });
+
+    element.on('touchcancel', function(event) {
+      resetState();
+    });
+
+    element.on('touchend', function(event) {
+      var diff = Date.now() - startTime;
+
+      var touches = (event.changedTouches && event.changedTouches.length) ? event.changedTouches :
+          ((event.touches && event.touches.length) ? event.touches : [event]);
+      var e = touches[0].originalEvent || touches[0];
+      var x = e.clientX;
+      var y = e.clientY;
+      var dist = Math.sqrt( Math.pow(x - touchStartX, 2) + Math.pow(y - touchStartY, 2) );
+
+      if (tapping && diff < TAP_DURATION && dist < MOVE_TOLERANCE) {
+        // Call preventGhostClick so the clickbuster will catch the corresponding click.
+        preventGhostClick(x, y);
+
+        // Blur the focused element (the button, probably) before firing the callback.
+        // This doesn't work perfectly on Android Chrome, but seems to work elsewhere.
+        // I couldn't get anything to work reliably on Android Chrome.
+        if (tapElement) {
+          tapElement.blur();
+        }
+
+        if (!angular.isDefined(attr.disabled) || attr.disabled === false) {
+          element.triggerHandler('click', [event]);
+        }
+      }
+
+      resetState();
+    });
+
+    // Hack for iOS Safari's benefit. It goes searching for onclick handlers and is liable to click
+    // something else nearby.
+    element.onclick = function(event) { };
+
+    // Actual click handler.
+    // There are three different kinds of clicks, only two of which reach this point.
+    // - On desktop browsers without touch events, their clicks will always come here.
+    // - On mobile browsers, the simulated "fast" click will call this.
+    // - But the browser's follow-up slow click will be "busted" before it reaches this handler.
+    // Therefore it's safe to use this directive on both mobile and desktop.
+    element.on('click', function(event, touchend) {
+      scope.$apply(function() {
+        clickHandler(scope, {$event: (touchend || event)});
+      });
+    });
+
+    element.on('mousedown', function(event) {
+      element.addClass(ACTIVE_CLASS_NAME);
+    });
+
+    element.on('mousemove mouseup', function(event) {
+      element.removeClass(ACTIVE_CLASS_NAME);
+    });
+
+  };
+}]);
+
+/* global ngTouch: false */
+
+/**
+ * @ngdoc directive
+ * @name ngTouch.directive:ngSwipeLeft
+ *
+ * @description
+ * Specify custom behavior when an element is swiped to the left on a touchscreen device.
+ * A leftward swipe is a quick, right-to-left slide of the finger.
+ * Though ngSwipeLeft is designed for touch-based devices, it will work with a mouse click and drag
+ * too.
+ *
+ * Requires the {@link ngTouch `ngTouch`} module to be installed.
+ *
+ * @element ANY
+ * @param {expression} ngSwipeLeft {@link guide/expression Expression} to evaluate
+ * upon left swipe. (Event object is available as `$event`)
+ *
+ * @example
+    <doc:example>
+      <doc:source>
+        <div ng-show="!showActions" ng-swipe-left="showActions = true">
+          Some list content, like an email in the inbox
+        </div>
+        <div ng-show="showActions" ng-swipe-right="showActions = false">
+          <button ng-click="reply()">Reply</button>
+          <button ng-click="delete()">Delete</button>
+        </div>
+      </doc:source>
+    </doc:example>
+ */
+
+/**
+ * @ngdoc directive
+ * @name ngTouch.directive:ngSwipeRight
+ *
+ * @description
+ * Specify custom behavior when an element is swiped to the right on a touchscreen device.
+ * A rightward swipe is a quick, left-to-right slide of the finger.
+ * Though ngSwipeRight is designed for touch-based devices, it will work with a mouse click and drag
+ * too.
+ *
+ * Requires the {@link ngTouch `ngTouch`} module to be installed.
+ *
+ * @element ANY
+ * @param {expression} ngSwipeRight {@link guide/expression Expression} to evaluate
+ * upon right swipe. (Event object is available as `$event`)
+ *
+ * @example
+    <doc:example>
+      <doc:source>
+        <div ng-show="!showActions" ng-swipe-left="showActions = true">
+          Some list content, like an email in the inbox
+        </div>
+        <div ng-show="showActions" ng-swipe-right="showActions = false">
+          <button ng-click="reply()">Reply</button>
+          <button ng-click="delete()">Delete</button>
+        </div>
+      </doc:source>
+    </doc:example>
+ */
+
+function makeSwipeDirective(directiveName, direction, eventName) {
+  ngTouch.directive(directiveName, ['$parse', '$swipe', function($parse, $swipe) {
+    // The maximum vertical delta for a swipe should be less than 75px.
+    var MAX_VERTICAL_DISTANCE = 75;
+    // Vertical distance should not be more than a fraction of the horizontal distance.
+    var MAX_VERTICAL_RATIO = 0.3;
+    // At least a 30px lateral motion is necessary for a swipe.
+    var MIN_HORIZONTAL_DISTANCE = 30;
+
+    return function(scope, element, attr) {
+      var swipeHandler = $parse(attr[directiveName]);
+
+      var startCoords, valid;
+
+      function validSwipe(coords) {
+        // Check that it's within the coordinates.
+        // Absolute vertical distance must be within tolerances.
+        // Horizontal distance, we take the current X - the starting X.
+        // This is negative for leftward swipes and positive for rightward swipes.
+        // After multiplying by the direction (-1 for left, +1 for right), legal swipes
+        // (ie. same direction as the directive wants) will have a positive delta and
+        // illegal ones a negative delta.
+        // Therefore this delta must be positive, and larger than the minimum.
+        if (!startCoords) return false;
+        var deltaY = Math.abs(coords.y - startCoords.y);
+        var deltaX = (coords.x - startCoords.x) * direction;
+        return valid && // Short circuit for already-invalidated swipes.
+            deltaY < MAX_VERTICAL_DISTANCE &&
+            deltaX > 0 &&
+            deltaX > MIN_HORIZONTAL_DISTANCE &&
+            deltaY / deltaX < MAX_VERTICAL_RATIO;
+      }
+
+      $swipe.bind(element, {
+        'start': function(coords, event) {
+          startCoords = coords;
+          valid = true;
+        },
+        'cancel': function(event) {
+          valid = false;
+        },
+        'end': function(coords, event) {
+          if (validSwipe(coords)) {
+            scope.$apply(function() {
+              element.triggerHandler(eventName);
+              swipeHandler(scope, {$event: event});
+            });
+          }
+        }
+      });
+    };
+  }]);
+}
+
+// Left is negative X-coordinate, right is positive.
+makeSwipeDirective('ngSwipeLeft', -1, 'swipeleft');
+makeSwipeDirective('ngSwipeRight', 1, 'swiperight');
+
+
+
+})(window, window.angular);
+
+angular.module("mobile-angular-ui.directives.capture", []).run([
+  "CaptureService", "$rootScope", function(CaptureService, $rootScope) {
+    return $rootScope.$on('$routeChangeStart', function() {
+      return CaptureService.resetAll();
+    });
+  }
+]).factory("CaptureService", [
+  "$compile", function($compile) {
+    var yielders;
+    yielders = {};
+    return {
+      resetAll: function() {
+        var name, yielder, _results;
+        _results = [];
+        for (name in yielders) {
+          yielder = yielders[name];
+          _results.push(this.resetYielder(name));
+        }
+        return _results;
+      },
+      resetYielder: function(name) {
+        var b;
+        b = yielders[name];
+        return this.setContentFor(name, b.defaultContent, b.defaultScope);
+      },
+      putYielder: function(name, element, defaultScope, defaultContent) {
+        var yielder;
+        yielder = yielders[name] = {};
+        yielder.name = name;
+        yielder.element = element;
+        yielder.defaultContent = defaultContent || "";
+        return yielder.defaultScope = defaultScope;
+      },
+      getYielder: function(name) {
+        return yielders[name];
+      },
+      removeYielder: function(name) {
+        return delete yielders[name];
+      },
+      setContentFor: function(name, content, scope) {
+        var b, compiled, sanitizedContent;
+        b = yielders[name];
+        if (!b) {
+          return;
+        }
+        sanitizedContent = content.replace(/^\s+/, "");
+        compiled = $compile(sanitizedContent)(scope);
+        return b.element.empty().append(compiled);
+      }
+    };
+  }
+]).directive("contentFor", [
+  "CaptureService", function(CaptureService) {
+    return {
+      link: function(scope, elem, attrs) {
+        CaptureService.setContentFor(attrs.contentFor, elem.html(), scope);
+        if (attrs.duplicate == null) {
+          return elem.remove();
+        } else {
+          return elem;
+        }
+      }
+    };
+  }
+]).directive("yieldTo", [
+  "$compile", "CaptureService", function($compile, CaptureService) {
+    return {
+      link: function(scope, element, attr) {
+        CaptureService.putYielder(attr.yieldTo, element, scope, element.html());
+        return element.contents().remove();
+      }
+    };
+  }
+]);
+
+angular.module('mobile-angular-ui.directives.forms', []).directive("bsInput", function() {
+  return {
+    replace: true,
+    require: "ngModel",
+    link: function(scope, elem, attrs) {
+      var ll, w1, w2, w3;
+      if (attrs.id == null) {
+        attrs.id = attrs.ngModel.replace(".", "_") + "_input";
+      }
+      elem.addClass("form-control");
+      ll = angular.element("<label for=\"" + attrs.id + "\" class=\"control-label col-sm-2\">" + attrs.label + "</label>");
+      w1 = angular.element("<div class=\"form-group container-fluid\"></div>");
+      w2 = angular.element("<div class=\"row\"></div>");
+      w3 = angular.element("<div class=\"col-sm-10\"></div>");
+      elem.wrap(w1).wrap(w2).wrap(w3);
+      return w2.prepend(ll);
+    }
+  };
+}).directive("bsTextarea", function() {
+  return {
+    replace: true,
+    require: "ngModel",
+    template: function(elem, attrs) {
+      var inputId;
+      inputId = attrs.ngModel.replace(".", "_") + "_input";
+      return "<div class=\"form-group container-fluid\">\n  <div class=\"row\">\n    <label for=\"" + inputId + "\" class=\"control-label col-sm-2\">" + attrs.label + "</label>\n    <div class=\"col-sm-10\">\n      <textarea id=\"" + inputId + "\" ng-model=\"" + attrs.ngModel + "\" class=\"form-control " + (attrs["class"] || '') + "\"></textarea>\n    </div>\n  </div>\n</div>";
+    },
+    link: function(scope, element, attrs) {
+      return element.removeAttr('label').removeAttr('ng-model').attr('class', "form-group");
+    }
+  };
+});
+
+angular.module('mobile-angular-ui.directives.overlay', []).directive('overlay', [
+  "$compile", function($compile) {
+    return {
+      link: function(scope, elem, attrs) {
+        var body, html, id;
+        body = elem.html();
+        id = attrs.overlay;
+        html = "<div class=\"overlay\" id=\"" + id + "\" toggleable active-class=\"in\">\n  <div class=\"overlay-inner\">\n    <div class=\"overlay-background\"></div>\n    <a href=\"#" + id + "\" toggle=\"off\" class=\"overlay-dismiss\">\n      <i class=\"fa fa-times-circle-o\"></i>\n    </a>\n    <div class=\"overlay-content\">\n      <div class=\"overlay-body\">\n        " + body + "\n      </div>\n    </div>\n  </div>\n</div>";
+        angular.element(document.body).prepend($compile(html)(scope));
+        return elem.remove();
+      }
+    };
+  }
+]);
+
+angular.module("mobile-angular-ui.directives.panels", []).directive("bsPanel", function() {
+  return {
+    restrict: 'EA',
+    replace: true,
+    scope: false,
+    transclude: true,
+    template: function(elems, attrs) {
+      var heading;
+      heading = "";
+      if (attrs.title) {
+        heading = "<div class=\"panel-heading\">\n  <h2 class=\"panel-title\">\n    " + attrs.title + "\n  </h2>\n</div>";
+      }
+      return "<div class=\"panel\">\n  " + heading + "\n  <div class=\"panel-body\">\n     <div ng-transclude></div>\n  </div>\n</div>";
+    }
+  };
+});
+
+angular.module("mobile-angular-ui.directives.scrollable", []).directive("scrollable", function() {
+  return {
+    replace: false,
+    restrict: "C",
+    link: function(scope, element, attr) {
+      return setTimeout((function() {
+        var iscroll;
+        [].slice.call(document.querySelectorAll("input, select, button, textarea")).forEach(function(el) {
+          return el.addEventListener(("ontouchstart" in window ? "touchstart" : "mousedown"), function(e) {
+            return e.stopPropagation();
+          });
+        });
+        return iscroll = new iScroll(element[0], {
+          wheelAction: 'scroll',
+          checkDOMChanges: true
+        });
+      }), 200);
+    }
+  };
+});
+
+(function() {
+  var Toggle, Toggleable, Toggler;
+  Toggle = {
+    moduleName: "mobile-angular-ui.directives.toggle",
+    events: {
+      toggle: "mobile-angular-ui.toggle.toggle",
+      toggleByClass: "mobile-angular-ui.toggle.toggleByClass",
+      togglerLinked: "mobile-angular-ui.toggle.linked",
+      toggleableToggled: "mobile-angular-ui.toggle.toggled"
+    },
+    commands: {
+      alternate: "toggle",
+      activate: "on",
+      deactivate: "off"
+    },
+    helpers: {
+      updateElemClasses: function(elem, attrs, active) {
+        var parent;
+        if (active) {
+          if (attrs.activeClass) {
+            elem.addClass(attrs.activeClass);
+          }
+          if (attrs.inactiveClass) {
+            elem.removeClass(attrs.inactiveClass);
+          }
+          parent = elem.parent();
+          if (attrs.parentActiveClass) {
+            parent.addClass(attrs.parentActiveClass);
+          }
+          if (attrs.parentInactiveClass) {
+            return parent.removeClass(attrs.parentInactiveClass);
+          }
+        } else {
+          if (attrs.inactiveClass) {
+            elem.addClass(attrs.inactiveClass);
+          }
+          if (attrs.activeClass) {
+            elem.removeClass(attrs.activeClass);
+          }
+          parent = elem.parent();
+          if (attrs.parentInactiveClass) {
+            parent.addClass(attrs.parentInactiveClass);
+          }
+          if (attrs.parentActiveClass) {
+            return parent.removeClass(attrs.parentActiveClass);
+          }
+        }
+      }
+    }
+  };
+  Toggler = (function() {
+    function Toggler(scope, elem, attrs) {
+      var _ref;
+      this.scope = scope;
+      this.elem = elem;
+      this.attrs = attrs;
+      this.command = this.attrs.toggle || Toggle.commands.alternate;
+      this.target = this.attrs.target;
+      this.targetClass = this.attrs.targetClass;
+      this.rootScope = this.scope;
+      this.bubble = (_ref = this.attrs.bubble) === "true" || _ref === "1" || _ref === 1 || _ref === "" || _ref === "bubble";
+      if ((!this.target) && this.attrs.href) {
+        this.target = this.attrs.href.slice(1);
+      }
+      if (!(this.target || this.targetClass)) {
+        throw "'target' or 'target-class' attribute required with 'toggle'";
+      }
+    }
+
+    Toggler.prototype.toggle = function() {
+      return this.rootScope.toggle(this.target, this.command);
+    };
+
+    Toggler.prototype.toggleByClass = function() {
+      return this.$rootScope.toggleByClass(this.targetClass, this.command);
+    };
+
+    Toggler.prototype.hasTarget = function() {
+      return !!this.target;
+    };
+
+    Toggler.prototype.hasTargetClass = function() {
+      return !!this.targetClass;
+    };
+
+    Toggler.prototype.fireTogglerLinked = function() {
+      if (this.hasTarget()) {
+        return this.rootScope.$broadcast(Toggle.events.togglerLinked, this.target);
+      }
+    };
+
+    Toggler.prototype.link = function() {
+      var _this = this;
+      this.elem.on("click tap", function(e) {
+        if (!_this.elem.hasClass("disabled")) {
+          if (_this.hasTarget()) {
+            _this.toggle();
+          }
+          if (_this.hasTargetClass()) {
+            _this.toggleByClass();
+          }
+          if (!_this.bubble) {
+            e.preventDefault();
+            return false;
+          } else {
+            return true;
+          }
+        }
+      });
+      this.scope.$on(Toggle.events.toggleableToggled, function(e, id, newState) {
+        if (id === _this.target) {
+          return Toggle.helpers.updateElemClasses(_this.elem, _this.attrs, newState);
+        }
+      });
+      return this.fireTogglerLinked();
+    };
+
+    return Toggler;
+
+  })();
+  Toggleable = (function() {
+    function Toggleable(scope, elem, attrs) {
+      this.scope = scope;
+      this.elem = elem;
+      this.attrs = attrs;
+      this.id = this.attrs.id;
+      this.exclusionGroup = this.attrs.exclusionGroup;
+      this.toggleState = false;
+      this["default"] = this.attrs["default"];
+      this.rootScope = this.scope.$root;
+    }
+
+    Toggleable.prototype.setToggleState = function(value) {
+      if (value !== this.toggleState) {
+        return this.toggleState = value;
+      }
+    };
+
+    Toggleable.prototype.getToggleState = function() {
+      return !!this.toggleState;
+    };
+
+    Toggleable.prototype.notifyToggleState = function() {
+      return this.rootScope.$broadcast(Toggle.events.toggleableToggled, this.id, this.getToggleState(), this.exclusionGroup);
+    };
+
+    Toggleable.prototype.toggleStateChanged = function() {
+      this.notifyToggleState();
+      return Toggle.helpers.updateElemClasses(this.elem, this.attrs, this.getToggleState());
+    };
+
+    Toggleable.prototype.runCommand = function(command) {
+      var oldState;
+      oldState = this.getToggleState();
+      switch (command) {
+        case Toggle.commands.activate:
+          this.setToggleState(true);
+          break;
+        case Toggle.commands.deactivate:
+          this.setToggleState(false);
+          break;
+        case Toggle.commands.alternate:
+          this.setToggleState(!this.getToggleState());
+      }
+      if (oldState !== this.getToggleState()) {
+        return this.toggleStateChanged();
+      }
+    };
+
+    Toggleable.prototype.link = function() {
+      var _this = this;
+      if (this["default"]) {
+        switch (this["default"]) {
+          case "active":
+            this.setToggleState(true);
+            break;
+          case "inactive":
+            this.setToggleState(false);
+        }
+        this.toggleStateChanged();
+      }
+      this.scope.$on(Toggle.events.toggle, function(e, target, command) {
+        if (target === _this.id) {
+          return _this.runCommand(command);
+        }
+      });
+      this.scope.$on(Toggle.events.toggleByClass, function(e, targetClass, command) {
+        if (_this.elem.hasClass(targetClass)) {
+          return _this.runCommand(command);
+        }
+      });
+      this.scope.$on(Toggle.events.toggleableToggled, function(e, target, newState, sameGroup) {
+        if (newState && (_this.id !== target) && (_this.exclusionGroup === sameGroup) && (_this.exclusionGroup != null)) {
+          _this.setToggleState(false);
+          return _this.toggleStateChanged();
+        }
+      });
+      return this.scope.$on(Toggle.events.togglerLinked, function(e, target) {
+        if (_this.id === target) {
+          return _this.notifyToggleState();
+        }
+      });
+    };
+
+    return Toggleable;
+
+  })();
+  return angular.module(Toggle.moduleName, []).run([
+    "$rootScope", function($rootScope) {
+      $rootScope.toggle = function(target, command) {
+        if (command == null) {
+          command = "toggle";
+        }
+        return $rootScope.$broadcast(Toggle.events.toggle, target, command);
+      };
+      return $rootScope.toggleByClass = function(targetClass, command) {
+        if (command == null) {
+          command = "toggle";
+        }
+        return $rootScope.$broadcast(Toggle.events.toggleByClass, targetClass, command);
+      };
+    }
+  ]).directive('toggle', [
+    function() {
+      return {
+        restrict: "A",
+        link: function(scope, elem, attrs) {
+          var toggler;
+          toggler = new Toggler(scope, elem, attrs);
+          return toggler.link();
+        }
+      };
+    }
+  ]).directive('toggleable', [
+    function() {
+      return {
+        restrict: "A",
+        link: function(scope, elem, attrs) {
+          var toggleable;
+          toggleable = new Toggleable(scope, elem, attrs);
+          return toggleable.link();
+        }
+      };
+    }
+  ]);
+})();
+
+document.addEventListener("touchmove", (function(e) {
+  return e.preventDefault();
+}), false);
+
+angular.module("mobile-angular-ui", ['ngTouch', 'ngAnimate', 'ngRoute', 'mobile-angular-ui.directives.toggle', 'mobile-angular-ui.directives.overlay', 'mobile-angular-ui.directives.forms', 'mobile-angular-ui.directives.panels', 'mobile-angular-ui.directives.capture', 'mobile-angular-ui.directives.scrollable']).run([
+  "$rootScope", function($rootScope) {
+    return angular.forEach(["$locationChangeSuccess", "$includeContentLoaded"], function(evtName) {
+      return $rootScope.$on(evtName, function() {
+        var newPath;
+        newPath = window.location.href;
+        return angular.forEach(document.links, function(domLink) {
+          var link;
+          link = angular.element(domLink);
+          if (domLink.href === newPath) {
+            return link.addClass("active");
+          } else {
+            return link.removeClass("active");
+          }
+        });
+      });
+    });
+  }
+]);
+
+angular.element(document).on("click tap", function(e) {
+  var target;
+  target = angular.element(e.target);
+  if (target.hasClass("disabled")) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  } else {
+    return true;
+  }
+});

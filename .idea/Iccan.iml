@@ -4,6 +4,9 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="angular-mocks.js" level="project" />
+    <orderEntry type="library" name="angular-route" level="application" />
+    <orderEntry type="library" name="angular" level="application" />
   </component>
 </module>
 

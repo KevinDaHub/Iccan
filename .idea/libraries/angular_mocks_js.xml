@@ -1,0 +1,22 @@
+<component name="libraryTable">
+  <library name="angular-mocks.js" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/../FinalWeb/test/lib/angular/angular-mocks.js" />
+        <item url="file://$PROJECT_DIR$/../FinalWeb/test/lib/angular/angular-scenario.js" />
+        <item url="file://$PROJECT_DIR$/../FinalWeb/app/js/bootstrap.js" />
+        <item url="file://$PROJECT_DIR$/../FinalWeb/test/lib/angular/angular-route.js" />
+        <item url="file://$PROJECT_DIR$/../FinalWeb/test/lib/angular/angular.js" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../FinalWeb/test/lib/angular/angular-mocks.js" />
+      <root url="file://$PROJECT_DIR$/../FinalWeb/test/lib/angular/angular-scenario.js" />
+      <root url="file://$PROJECT_DIR$/../FinalWeb/app/js/bootstrap.js" />
+      <root url="file://$PROJECT_DIR$/../FinalWeb/app/js/bootstrap.min.js" />
+      <root url="file://$PROJECT_DIR$/../FinalWeb/test/lib/angular/angular-route.js" />
+      <root url="file://$PROJECT_DIR$/../FinalWeb/test/lib/angular/angular.js" />
+    </CLASSES>
+    <SOURCES />
+  </library>
+</component>
