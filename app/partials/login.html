@@ -33,21 +33,21 @@
 
 
 
-<form class="form">
+<form ng-submit="login()" class="form">
 
     <img class="logo" src="logoiccan.png" />
     <div class="form-group">
 
         <div class="input-group">
              <span class="input-group-addon">G</span>
-        <input class="form-control" type="text"  ng-model="user" placeholder="Gebruikersnaam..." />
+        <input class="form-control" type="text"  ng-model="usern" placeholder="Gebruikersnaam..." />
 </div>
         </div>
     <div class="form-group">
 
         <div class="input-group">
             <span class="input-group-addon">*</span>
-        <input class="form-control" type="password" maxlength="25" size="18" ng-model="pass" placeholder="Wachtwoord..." />
+        <input class="form-control" name="psw" type="password" maxlength="25" size="18" ng-model="pass" placeholder="Wachtwoord..." />
 </div>
       </div>
     <div ng-cloak ng-show="createMode">
@@ -119,7 +119,7 @@
 
 
 
-    <button  class="btn btn-primary" ng-click="login()" ng-hide="createMode">Log In</button>
+    <input  class="btn btn-primary" type="submit" ng-hide="createMode" value="Login" />
     <button  class="btn btn-default" ng-click="createMode = true" ng-hide="createMode">Inschrijven</button>
     <button class="btn btn-primary" ng-cloak ng-show="createMode" ng-click="createAccount()">Klaar</button>
     <button class="btn btn-danger" ng-cloak ng-show="createMode" ng-click="createMode = false">Cancel</button>

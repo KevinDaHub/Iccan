@@ -31,7 +31,20 @@ var iccan = angular.module('iccan',[ 'ngRoute']);
           });
   }]);
 
-      iccan.controller('LoginCtrl', ['$scope','$location', function($scope,$location) {
+iccan.config(['$httpProvider', function($httpProvider){
+
+    $httpProvider.defaults.headers.common = {};
+    $httpProvider.defaults.headers.post = {};
+    $httpProvider.defaults.headers.put = {};
+    $httpProvider.defaults.headers.patch = {};
+
+    $httpProvider.defaults.useXDomain = true;
+    delete $httpProvider.defaults.headers.common['X-Requested-With'];
+
+
+}]);
+
+      iccan.controller('LoginCtrl', ['$scope','$location','$http', function($scope,$location,$http,$templateCache) {
           $scope.user=null;
           $scope.email = null;
           $scope.pass = null;
@@ -45,6 +58,7 @@ var iccan = angular.module('iccan',[ 'ngRoute']);
           $scope.titel="Login";
 
 
+
           $scope.createAccount = function(){
 
               $location.path('/license');
@@ -53,7 +67,41 @@ var iccan = angular.module('iccan',[ 'ngRoute']);
 
           $scope.login=function(){
 
-              $location.path('/taakbeheer');
+
+
+                    var url = "http://scripts.iccan.be/login.php";
+              var FormData={
+                  'username':$scope.usern,
+                   'password':$scope.pass
+              };
+
+
+
+              $http({
+                  method:'POST',
+                  url:url,
+                  data:FormData,
+                  headers:{'Content-Type': 'application/x-www-form-urlencoded'},
+                  cache:$templateCache
+
+                  })
+
+                  .success(function(response,status){
+
+                      $scope.content = JSON.stringify(response);
+                      $scope.status = status;
+                      alert($scope.content);
+
+                  })
+             .error(function(response,status){
+
+                      $scope.content = response;
+                      $scope.status=status;
+                      alert(status);
+                      alert($scope.content);
+
+              })
+
 
           }
 
