@@ -1,6 +1,3 @@
-
-
-
 <style>
 
 
@@ -25,7 +22,7 @@
     <div class="im">
         <img src="logow.png" />
     </div>
-<p class="titelheader" >Login</p>
+    <p class="titelheader" >Login</p>
 </div>
 
 
@@ -33,99 +30,105 @@
 
 
 
-<form ng-submit="login()" class="form">
+    <form ng-submit="login()" class="form">
 
-    <img class="logo" src="logoiccan.png" />
-    <div class="form-group">
 
-        <div class="input-group">
-             <span class="input-group-addon">G</span>
-        <input class="form-control" type="text"  ng-model="usern" placeholder="Gebruikersnaam..." />
-</div>
+
+
+
+
+
+        <img class="logo" src="logoiccan.png" />
+        <div class="form-group">
+
+            <div class="input-group">
+                <span class="input-group-addon">G</span>
+                <input class="form-control" type="text"  ng-model="usern" placeholder="Gebruikersnaam..." />
+            </div>
         </div>
-    <div class="form-group">
-
-        <div class="input-group">
-            <span class="input-group-addon">*</span>
-        <input class="form-control" name="psw" type="password" maxlength="25" size="18" ng-model="pass" placeholder="Wachtwoord..." />
-</div>
-      </div>
-    <div ng-cloak ng-show="createMode">
-
-       <div class="form-group">
-           <div class="input-group">
-               <span class="input-group-addon">**</span>
-            <input class="form-control" size="18" type="password" ng-model="confirm" placeholder="Confirm wachtwoord" />
-               </div>
-           </div>
-
         <div class="form-group">
-           <div class="input-group">
-               <span class="input-group-addon">N</span>
 
-               <input class="form-control" size="18" type="text" ng-model="naam" placeholder="Naam..." />
-               </div>
+            <div class="input-group">
+                <span class="input-group-addon">*</span>
+                <input class="form-control" name="psw" type="password" maxlength="25" size="18" ng-model="pass" placeholder="Wachtwoord..." />
+            </div>
+        </div>
+        <div ng-cloak ng-show="createMode">
+
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon">**</span>
+                    <input class="form-control" size="18" type="password" ng-model="confirm" placeholder="Confirm wachtwoord" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon">N</span>
+
+                    <input class="form-control" size="18" type="text" ng-model="naam" placeholder="Naam..." />
+                </div>
             </div>
 
 
-        <div class="form-group">
-           <div class="input-group">
-               <span class="input-group-addon">AN</span>
-               <input class="form-control" size="18" type="text" ng-model="achternaam" placeholder="Achternaam..." />
-               </div>
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon">AN</span>
+                    <input class="form-control" size="18" type="text" ng-model="achternaam" placeholder="Achternaam..." />
+                </div>
             </div>
 
 
-        <div class="form-group">
-           <div class="input-group">
-               <span class="input-group-addon">@</span>
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon">@</span>
 
-           <input class="form-control" size="18" type="email" ng-model="email" placeholder="Email..." />
-              </div>
+                    <input class="form-control" size="18" type="email" ng-model="email" placeholder="Email..." />
+                </div>
             </div>
 
 
-        <div class="form-group">
-        <div class="input-group">
+            <div class="form-group">
+                <div class="input-group">
       <span class="input-group-addon">
         <input type="checkbox">
       </span>
-            <p class="form-control">M</p>
+                    <p class="form-control">M</p>
              <span class="input-group-addon">
         <input type="checkbox">
       </span>
-            <p class="form-control">V</p>
+                    <p class="form-control">V</p>
+
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                    <div class="input-group date" id="datetimepicker1">
+                        <input type="text" class="form-control" />
+
+
+
+                    </div>
+                </div>
+            </div>
+
+
 
         </div>
-            </div>
-
-        <div class="form-group">
-           <div class="input-group">
-               <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
-              <div class="input-group date" id="datetimepicker1">
-                  <input type="text" class="form-control" />
-
-
-
-               </div>
-            </div>
-            </div>
-
-
-
-</div>
 
 
 
 
 
-    <input  class="btn btn-primary" type="submit" ng-hide="createMode" value="Login" />
-    <button  class="btn btn-default" ng-click="createMode = true" ng-hide="createMode">Inschrijven</button>
-    <button class="btn btn-primary" ng-cloak ng-show="createMode" ng-click="createAccount()">Klaar</button>
-    <button class="btn btn-danger" ng-cloak ng-show="createMode" ng-click="createMode = false">Cancel</button>
+        <input  class="btn btn-primary" type="submit" ng-hide="createMode" value="Login" />
+        <button  class="btn btn-default" ng-click="createMode = true" ng-hide="createMode">Inschrijven</button>
+        <button class="btn btn-primary" ng-cloak ng-show="createMode" ng-click="createAccount()">Klaar</button>
+        <button class="btn btn-danger" ng-cloak ng-show="createMode" ng-click="createMode = false">Cancel</button>
 
-    <p ng-show="err" class="error">{{err}}</p>
-</form>
+        <p ng-show="err" class="error">{{err}}</p>
+    </form>
 
 
 

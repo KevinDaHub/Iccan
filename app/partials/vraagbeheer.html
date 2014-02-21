@@ -9,20 +9,20 @@
 
 <div id="main">
 
-    <div class="vraag">
-    <p>{{vraag.name}}</p>
+    <div class="vraag" >
+    <p>{{item.naam}}</p>
 </div>
     <div class="antwoord" data-ng-show="check" >
-       <label>1<input type="radio" name="options" value="1"></label>
-        <label>2<input type="radio" name="options" value="2"></label>
-        <label>3<input type="radio" name="options" value="3"></label>
-        <label>4<input type="radio" name="options" value="4"></label>
+       <label>1<input type="radio" ng-model="answer" name="options" value="1"></label>
+        <label>2<input type="radio" ng-model="answer" name="options" value="2"></label>
+        <label>3<input type="radio" ng-model="answer" name="options" value="3"></label>
+        <label>4<input type="radio" ng-model="answer" name="options" value="4"></label>
     </div>
 
     <div class="antwoord" data-ng-hide="check">
 
-        <label>Ja<input type="radio" name="options" value="ja"></label>
-        <label>Nee<input type="radio" name="options" value="nee"></label>
+        <label>Ja<input type="radio" ng-model="answer" name="options" value="ja"></label>
+        <label>Nee<input type="radio" ng-model="answer" name="options" value="nee"></label>
 
     </div>
 
@@ -30,5 +30,5 @@
 
 </div>
 <div  style="background-color: #5078E8;" class="navbar navbar-app navbar-absolute-bottom">
-    <button id="fixedbutton" ng-click="nextQuestion()" class="btn-success">Volgende ></button>
+    <button id="fixedbutton" ng-click="nextQuestion()" class="btn-success">Antwoord ></button>
 </div>

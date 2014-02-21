@@ -5,31 +5,35 @@ var iccan = angular.module('iccan',[ 'ngRoute']);
 
 
 
-  iccan.config(['$routeProvider',function($routeProvider){
-      $routeProvider.when('/login',{
-          templateUrl:'partials/login.html',
-          controller:'LoginCtrl'
-      })
+iccan.config(['$routeProvider',function($routeProvider){
+    $routeProvider.when('/login',{
+        templateUrl:'partials/login.html',
+        controller:'LoginCtrl'
+    })
 
-          .when('/taakbeheer',{
-              templateUrl:'partials/taakbeheer.html',
-              controller:'TaakCtrl'
-          })
+        .when('/taakbeheer',{
+            templateUrl:'partials/taakbeheer.html',
+            controller:'TaakCtrl'
+        })
 
-          .when('/license',{
-              templateUrl:'partials/license.html',
-              controller:'LicenseCtrl'
-          })
-          .when('/vraagbeheer',{
-              templateUrl:'partials/vraagbeheer.html',
-              controller:'VraagCtrl'
-          })
+        .when('/license',{
+            templateUrl:'partials/license.html',
+            controller:'LicenseCtrl'
+        })
+        .when('/vraagbeheer',{
+            templateUrl:'partials/vraagbeheer.html',
+            controller:'VraagCtrl'
+        })
+        .when('/logboek',{
+            templateUrl:'partials/logbook.html',
+            controller:'LogbCtrl'
+        })
 
-          .otherwise({
-              redirectTo:'/login',
-              controller:'LoginCtrl'
-          });
-  }]);
+        .otherwise({
+            redirectTo:'/login',
+            controller:'LoginCtrl'
+        });
+}]);
 
 iccan.config(['$httpProvider', function($httpProvider){
 
@@ -44,70 +48,98 @@ iccan.config(['$httpProvider', function($httpProvider){
 
 }]);
 
-      iccan.controller('LoginCtrl', ['$scope','$location','$http', function($scope,$location,$http,$templateCache) {
-          $scope.user=null;
-          $scope.email = null;
-          $scope.pass = null;
-          $scope.confirm = null;
-          $scope.naam=null;
-          $scope.achternaam=null;
-          $scope.email=null;
-          $scope.geboortedatum=null;
-          $scope.createMode = false;
+iccan.run(function($rootScope){
 
-          $scope.titel="Login";
+    $rootScope.username ="";
+    $rootScope.userna =function(name){
+        this.username = name;
+    }
+    $rootScope.getUsern =function(){
+        return this.username;
+    }
+})
 
 
+iccan.factory('UserFactory',function(){
 
-          $scope.createAccount = function(){
+    return{
 
-              $location.path('/license');
+        name:'anonymous'
+    };
 
-          }
+});
 
-          $scope.login=function(){
-
-
-
-                    var url = "http://scripts.iccan.be/login.php";
-              var FormData={
-                  'username':$scope.usern,
-                   'password':$scope.pass
-              };
-
-
-
-              $http({
-                  method:'POST',
-                  url:url,
-                  data:FormData,
-                  headers:{'Content-Type': 'application/x-www-form-urlencoded'},
-                  cache:$templateCache
-
-                  })
-
-                  .success(function(response,status){
-
-                      $scope.content = JSON.stringify(response);
-                      $scope.status = status;
-                      alert($scope.content);
-
-                  })
-             .error(function(response,status){
-
-                      $scope.content = response;
-                      $scope.status=status;
-                      alert(status);
-                      alert($scope.content);
-
-              })
-
-
-          }
+iccan.controller('LoginCtrl', ['$scope','$location','$http', function($scope,$location,$http,$templateCache) {
+    $scope.user=null;
+    $scope.email = null;
+    $scope.pass = null;
+    $scope.confirm = null;
+    $scope.naam=null;
+    $scope.achternaam=null;
+    $scope.email=null;
+    $scope.geboortedatum=null;
+    $scope.createMode = false;
 
 
 
-  }]);
+
+    $scope.titel="Login";
+
+
+
+    $scope.createAccount = function(){
+
+        $location.path('/license');
+
+    };
+
+    $scope.login=function(){
+
+
+
+        var url = "http://iccan.be/scripts/login.php";
+        var FormData={
+            'username':$scope.usern,
+            'password':$scope.pass
+        };
+
+
+
+        $http({
+            method:'POST',
+            url:url,
+            data:FormData,
+            headers:{'Content-Type': 'application/x-www-form-urlencoded'},
+            cache:$templateCache
+
+        })
+
+            .success(function(response,status){
+                $scope.userna($scope.usern);
+
+
+                $scope.status = status;
+
+                $location.path('/license');
+
+
+
+            })
+            .error(function(response,status){
+
+                $scope.content = response;
+                $scope.status=status;
+                alert(status);
+                alert($scope.content);
+
+            })
+
+
+    };
+
+
+
+}]);
 
 iccan.controller('LicenseCtrl',['$scope','$location',function($scope,$location){
 
@@ -121,7 +153,7 @@ iccan.controller('LicenseCtrl',['$scope','$location',function($scope,$location){
 
 iccan.service('VraagService',function(){
 
-var i =0;
+    var i =0;
 
     var vragen = [{
         id: 1,
@@ -152,19 +184,228 @@ var i =0;
 
 });
 
-iccan.controller('VraagCtrl',['$scope','VraagService',function($scope,VraagService){
+iccan.controller('TaakCtrl',['$scope','$http','$location',function($scope,$http,$location){
 
-   var check =true;
-    var check2=false;
-
-        $scope.vraag = VraagService.get(1);
-
-    $scope.nextQuestion=function(){
-        $scope.vraag=VraagService.get(2);
-       check =false;
-        check2=true;
+    $scope.goToLog =function(){
+        $location.path('/logboek');
 
     }
+
+
+}]);
+
+iccan.controller('LogbCtrl',['$scope','$http',function($scope,$http){
+
+    var url = "http://iccan.be/scripts/logboek.php";
+
+var j =0;
+
+    $http.get(url)
+
+
+
+
+        .success(function(data,status){
+
+            $scope.items = data.vragen;
+            $scope.status = status;
+            $scope.item = $scope.items[0];
+
+            if($scope.item.type=="schaal"){
+
+                $scope.check = true;
+
+
+
+            }else{
+
+                $scope.check = false;
+            }
+
+
+
+        })
+        .error(function(response,status){
+
+            $scope.content = response;
+            $scope.status=status;
+            alert(status);
+            alert($scope.content);
+
+        });
+
+    $scope.nextQuestion=function(){
+
+
+
+
+        if(j<$scope.items.length){
+            $scope.item= $scope.items[j++];
+
+
+            if($scope.item.type=="schaal"){
+
+                $scope.check=true;
+
+                /*if($scope.answer<3){
+
+
+                 }
+
+                 //$scope.answers.push([{'username':$rootscope.username,'id':$scope.item.id, 'antwoord':$scope.answer}
+                 ]);*/
+
+
+
+
+
+            }else{
+
+                $scope.check =false;
+
+                // $scope.answers.push([{'username':$rootscope.username,'id':$scope.item.id, 'antwoord':$scope.answer}]);
+            }
+        }
+    };
+
+
+
+
+}]);
+
+iccan.controller('VraagCtrl',['$scope','$http','$location',function($scope,$http,$location){
+
+var i=0;
+var j=0;
+$scope.answers = [];
+    $scope.answer = 1;
+    $scope.answers.push([{'username':"test"}]);
+
+
+    var url = "http://iccan.be/scripts/hoofdvraag.php";
+
+
+
+    $http.get(url)
+
+
+
+
+        .success(function(data,status){
+
+            $scope.items = data.vragen;
+            $scope.status = status;
+            $scope.item = $scope.items[0];
+
+            if($scope.item.type=="schaal"){
+
+                $scope.check = true;
+
+
+
+            }else{
+
+                $scope.check = false;
+            }
+
+
+
+
+        })
+        .error(function(response,status){
+
+            $scope.content = response;
+            $scope.status=status;
+            alert(status);
+            alert($scope.content);
+
+        });
+
+   /*var check =true;
+    var check2=false;
+
+    $scope.vraag = VraagService.get(1);
+*/
+    $scope.nextQuestion=function(){
+
+
+
+
+       if(j<$scope.items.length){
+       $scope.item= $scope.items[j++];
+
+
+           if($scope.item.type=="schaal"){
+
+               $scope.check=true;
+
+               /*if($scope.answer<3){
+
+
+               }*/
+
+               $scope.answers.push([{'id':$scope.item.id, 'antwoord':$scope.answer}
+               ]);
+
+
+
+
+
+           }else{
+
+               $scope.check =false;
+
+              $scope.answers.push([{'id':$scope.item.id, 'antwoord':$scope.answer}]);
+           }
+
+       }else{
+
+
+
+           var uri = "http://iccan.be/scripts/antwoordenvraag.php";
+
+
+           $http({
+               method:'POST',
+               url:uri,
+               data:$scope.answers,
+               headers:{'Content-Type': 'application/x-www-form-urlencoded'}
+
+
+           })
+
+               .success(function(response,status){
+
+                   $scope.status = status;
+
+                   $location.path('/taakbeheer');
+
+
+
+
+               })
+               .error(function(response,status){
+
+                   $scope.content = response;
+                   $scope.status=status;
+                   alert(status);
+                   alert($scope.content);
+
+               })
+
+
+
+       }
+
+
+       };
+
+
+
+
+
+
+
 
 
 
@@ -173,4 +414,3 @@ iccan.controller('VraagCtrl',['$scope','VraagService',function($scope,VraagServi
 
 
 }]);
-
