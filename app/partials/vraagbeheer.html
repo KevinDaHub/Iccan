@@ -30,5 +30,6 @@
 
 </div>
 <div  style="background-color: #5078E8;" class="navbar navbar-app navbar-absolute-bottom">
-    <button id="fixedbutton" ng-click="nextQuestion()" class="btn-success">Antwoord ></button>
+    <button data-ng-hide="sub" id="fixedbutton" ng-click="nextQuestion()" class="btn-success">Antwoord ></button>
+    <button data-ng-show="sub" id="fixedbutton" ng-click="nextSubQuestion()" class="btn-danger">Antwoord ></button>
 </div>

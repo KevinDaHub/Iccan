@@ -4,7 +4,12 @@
     <bookmark url="file://$PROJECT_DIR$" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="76744bea-1187-4b57-affd-7373c3acfca3" name="Default" comment="" />
+    <list default="true" id="76744bea-1187-4b57-affd-7373c3acfca3" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/js/app.js" afterPath="$PROJECT_DIR$/app/js/app.js" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/jsLibraryMappings.xml" afterPath="$PROJECT_DIR$/.idea/jsLibraryMappings.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/partials/login.html" afterPath="$PROJECT_DIR$/app/partials/login.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/partials/vraagbeheer.html" afterPath="$PROJECT_DIR$/app/partials/vraagbeheer.html" />
+    </list>
     <ignored path="Iccan.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -65,7 +70,7 @@
       <file leaf-file-name="vraagbeheer.html" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/partials/vraagbeheer.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="33" column="6" selection-start="1131" selection-end="1131" vertical-scroll-proportion="0.0" vertical-offset="561" max-vertical-offset="663">
+            <state line="34" column="6" selection-start="1266" selection-end="1266" vertical-scroll-proportion="-22.23077" vertical-offset="0" max-vertical-offset="680">
               <folding />
             </state>
           </provider>
@@ -74,7 +79,7 @@
       <file leaf-file-name="index.html" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="24" column="0" selection-start="826" selection-end="826" vertical-scroll-proportion="-15.692307" vertical-offset="0" max-vertical-offset="816">
+            <state line="23" column="18" selection-start="825" selection-end="825" vertical-scroll-proportion="-15.038462" vertical-offset="0" max-vertical-offset="816">
               <folding />
             </state>
           </provider>
@@ -92,8 +97,18 @@
       <file leaf-file-name="app.js" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/js/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="384" column="0" selection-start="6844" selection-end="6844" vertical-scroll-proportion="0.561674" vertical-offset="6018" max-vertical-offset="7157">
-              <folding />
+            <state line="311" column="0" selection-start="5754" selection-end="5754" vertical-scroll-proportion="0.86894274" vertical-offset="4498" max-vertical-offset="5406">
+              <folding>
+                <element signature="e#5784#10253#0" expanded="false" />
+                <element signature="e#6727#9246#0" expanded="false" />
+                <element signature="e#7103#8341#0" expanded="false" />
+                <element signature="e#7202#7438#0" expanded="false" />
+                <element signature="e#7494#8044#0" expanded="false" />
+                <element signature="e#8097#8320#0" expanded="false" />
+                <element signature="e#8376#8532#0" expanded="false" />
+                <element signature="e#8546#9235#0" expanded="false" />
+                <element signature="e#9287#10235#0" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -101,7 +116,7 @@
       <file leaf-file-name="login.html" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/partials/login.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="30" column="0" selection-start="502" selection-end="502" vertical-scroll-proportion="0.0" vertical-offset="204" max-vertical-offset="2431">
+            <state line="33" column="0" selection-start="529" selection-end="529" vertical-scroll-proportion="38.0" vertical-offset="1549" max-vertical-offset="2431">
               <folding />
             </state>
           </provider>
@@ -135,10 +150,10 @@
         <option value="$PROJECT_DIR$/app/test.html" />
         <option value="$PROJECT_DIR$/app/js/tester.js" />
         <option value="$PROJECT_DIR$/app/index.html" />
-        <option value="$PROJECT_DIR$/app/partials/login.html" />
-        <option value="$PROJECT_DIR$/app/partials/vraagbeheer.html" />
         <option value="$PROJECT_DIR$/app/partials/taakbeheer.html" />
         <option value="$PROJECT_DIR$/app/partials/logbook.html" />
+        <option value="$PROJECT_DIR$/app/partials/login.html" />
+        <option value="$PROJECT_DIR$/app/partials/vraagbeheer.html" />
         <option value="$PROJECT_DIR$/app/js/app.js" />
       </list>
     </option>
@@ -175,7 +190,6 @@
       <sortByType />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -282,6 +296,7 @@
           </PATH>
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -290,8 +305,8 @@
     <property name="options.lastSelected" value="JavaScript.Libraries" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../FinalWeb/app/js/bootstrap.min.js" />
     <property name="DefaultHtmlFileTemplate" value="Html5" />
-    <property name="options.splitter.details.proportions" value="0.2" />
     <property name="options.searchVisible" value="true" />
+    <property name="options.splitter.details.proportions" value="0.2" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -306,6 +321,14 @@
     </key>
   </component>
   <component name="RunManager">
+    <configuration default="true" type="DartUnitRunConfigurationType" factoryName="DartUnit">
+      <option name="VMOptions" />
+      <option name="arguments" />
+      <option name="filePath" />
+      <option name="scope" value="ALL" />
+      <option name="testName" />
+      <method />
+    </configuration>
     <configuration default="true" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application">
       <option name="VMOptions" />
       <option name="arguments" />
@@ -314,14 +337,6 @@
       <option name="saveOutputToFile" value="false" />
       <option name="showConsoleOnStdErr" value="false" />
       <option name="showConsoleOnStdOut" value="false" />
-      <method />
-    </configuration>
-    <configuration default="true" type="DartUnitRunConfigurationType" factoryName="DartUnit">
-      <option name="VMOptions" />
-      <option name="arguments" />
-      <option name="filePath" />
-      <option name="scope" value="ALL" />
-      <option name="testName" />
       <method />
     </configuration>
     <configuration default="true" type="JavaScriptTestRunnerKarma" factoryName="Karma" singleton="true" config-file="">
@@ -364,7 +379,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1066" extended-state="0" />
+    <frame x="-8" y="-8" width="1936" height="1066" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -464,20 +479,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app/partials/login.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="30" column="0" selection-start="502" selection-end="502" vertical-scroll-proportion="0.0" vertical-offset="204" max-vertical-offset="2431">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app/partials/vraagbeheer.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="33" column="6" selection-start="1131" selection-end="1131" vertical-scroll-proportion="0.0" vertical-offset="561" max-vertical-offset="663">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app/partials/logbook.html">
       <provider selected="true" editor-type-id="text-editor">
         <state line="6" column="36" selection-start="189" selection-end="189" vertical-scroll-proportion="0.0" vertical-offset="102" max-vertical-offset="578">
@@ -492,17 +493,41 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/app/partials/login.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="33" column="0" selection-start="529" selection-end="529" vertical-scroll-proportion="38.0" vertical-offset="1549" max-vertical-offset="2431">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/app/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="24" column="0" selection-start="826" selection-end="826" vertical-scroll-proportion="-15.692307" vertical-offset="0" max-vertical-offset="816">
+        <state line="23" column="18" selection-start="825" selection-end="825" vertical-scroll-proportion="-15.038462" vertical-offset="0" max-vertical-offset="816">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/partials/vraagbeheer.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="34" column="6" selection-start="1266" selection-end="1266" vertical-scroll-proportion="-22.23077" vertical-offset="0" max-vertical-offset="680">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/js/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="384" column="0" selection-start="6844" selection-end="6844" vertical-scroll-proportion="0.561674" vertical-offset="6018" max-vertical-offset="7157">
-          <folding />
+        <state line="311" column="0" selection-start="5754" selection-end="5754" vertical-scroll-proportion="0.86894274" vertical-offset="4498" max-vertical-offset="5406">
+          <folding>
+            <element signature="e#5784#10253#0" expanded="false" />
+            <element signature="e#6727#9246#0" expanded="false" />
+            <element signature="e#7103#8341#0" expanded="false" />
+            <element signature="e#7202#7438#0" expanded="false" />
+            <element signature="e#7494#8044#0" expanded="false" />
+            <element signature="e#8097#8320#0" expanded="false" />
+            <element signature="e#8376#8532#0" expanded="false" />
+            <element signature="e#8546#9235#0" expanded="false" />
+            <element signature="e#9287#10235#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
