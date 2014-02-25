@@ -1,4 +1,4 @@
-<div style="background-color: #5078E8;" class="navbar navbar-app navbar-absolute-top">
+<div style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-top">
 
 
 
@@ -14,13 +14,87 @@
 
     <p class="titelheader2" >Taken</p>
 
+</div>
 
+        <a toggle="on" target="myOverlay"  class="btn-success" href>Toggle</a>
+
+<div overlay="myOverlay">
+    <h4 class="overlay-title">My Overlay</h4>
+    <p>
+    <div class="sidebar sidebar-left" toggleable active-class="in" id="mainSidebar">
+
+        <h1 class="app-name">Menu</h1>
+
+        <div class="scrollable">
+            <div class="scrollable-content">
+                <div class="list-group" toggle="off" bubble target="mainSidebar">
+                    <a class="list-group-item" href="#/">Profile <i class="fa fa-chevron-right pull-right"></i></a>
+                    <a class="list-group-item" href="#/logboek">Logboek <i class="fa fa-chevron-right pull-right"></i></a>
+
+                </div>
+
+            </div>
+        </div>
+
+    </div> Earum odit facilis qui.
+    </p>
+    <p toggle="off" bubble target="myOverlay">
+        <span class="btn btn-primary">Ok</span>
+        <span class="btn btn-default">Cancel</span>
+    </p>
+</div>
+
+<div class="panel-group" id="accordion">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a href toggle target="collapseOne">
+                    Collapsible Group Item #1
+                </a>
+            </h4>
+        </div>
+        <div id="collapseOne" toggleable active-class="in" exclusion-group="accordion1" default="active" class="panel-collapse collapse">
+            <div class="panel-body">
+                <!-- ... -->
+            </div>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a href toggle target="collapseTwo">
+                    Collapsible Group Item #2
+                </a>
+            </h4>
+        </div>
+        <div id="collapseTwo" toggleable active-class="in" exclusion-group="accordion1" class="panel-collapse collapse">
+            <div class="panel-body">
+                <!-- ... -->
+            </div>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a href toggle target="collapseThree">
+                    Collapsible Group Item #3
+                </a>
+            </h4>
+        </div>
+        <div id="collapseThree" toggleable active-class="in" exclusion-group="accordion1" class="panel-collapse collapse">
+            <div class="panel-body">
+                <!-- ... -->
+            </div>
+        </div>
+    </div>
 </div>
 
 
 
 
 
-<div  style="background-color: #5078E8;" class="navbar navbar-app navbar-absolute-bottom">
+
+
+<div  style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-bottom">
     <button id="fixedbutton" ng-click="goToLog()" class="btn-success">Logboek ></button>
 </div>

@@ -2,10 +2,24 @@
 
 var username = "anonymous";
 
-var iccan = angular.module('iccan',[ 'ngRoute']);
+var iccan = angular.module('iccan',[ 'ngRoute','mobile-angular-ui']);
 
 
-
+iccan.directive('calendar', function () {
+    return {
+        require: 'ngModel',
+        link: function (scope, el, attr, ngModel) {
+            $(el).datepicker({
+                dateFormat: 'yy-mm-dd',
+                onSelect: function (dateText) {
+                    scope.$apply(function () {
+                        ngModel.$setViewValue(dateText);
+                    });
+                }
+            });
+        }
+    };
+});
 
 iccan.config(['$routeProvider',function($routeProvider){
     $routeProvider.when('/login',{
@@ -75,41 +89,72 @@ iccan.controller('LoginCtrl', ['$scope','$location','$http', function($scope,$lo
     $scope.email=null;
     $scope.geboortedatum=null;
     $scope.createMode = false;
-
+    $scope.geslacht = null;
 
 
 
     $scope.titel="Login";
 
 
-
     $scope.createAccount = function(){
+        var url = "http://iccan.be/scripts/registreer.php";
+        var FormData={
+            'username':$scope.user,
+            'password':$scope.pass,
+            'name':$scope.naam,
+            'surname':$scope.achternaam,
+            'sex':$scope.geslacht,
+            'birthdate':"25/07/1992",
+            'email':$scope.email
 
-        if($scope.user==null){
-            $scope.err= "Vul uw gebruikersnaam in!";
-        }
-        if(!$scope.pass){
-            $scope.err = "Vul uw wachtwoord in!";
+        };
 
-        }
-        if(!$scope.confirm){
-            $scope.err = "Vul uw wachtwoord in!";
-        }
-        if(!$scope.naam){
-            $scope.err="Vul uw naam in!";
-        }
-        if(!$scope.achternaam){
-            $scope.err="Vul uw achternaam in";
-        }
-        if(!$scope.email){
-            $scope.err = "Vul uw email in!";
-        }
-        if(!$scope.geslacht){
-            $scope.err = "Vul uw geslacht!";
-        }
-        if(!$scope.geboortedatum){
-            $scope.err="Duid uw geboortdaturm aan";
-        }
+
+
+        $http({
+            method:'POST',
+            url:url,
+            data:FormData,
+            headers:{'Content-Type': 'application/x-www-form-urlencoded'},
+            cache:$templateCache
+
+        })
+
+            .success(function(data,status){
+
+                $scope.contents = data.berichten;
+                $scope.content = $scope.contents[0];
+
+
+
+                $scope.status = status;
+                alert($scope.content.succes);
+
+
+                if($scope.content.succes == 1 ){
+
+                    $location.path('/license');
+
+                }else{
+
+                    $scope.err = "Invalid data";
+
+                }
+
+
+
+
+            })
+            .error(function(data,status){
+
+
+                $scope.status=status;
+                alert(status);
+
+
+            })
+
+
 
 
 
@@ -223,6 +268,11 @@ iccan.service('VraagService',function(){
 
 iccan.controller('TaakCtrl',['$scope','$http','$location',function($scope,$http,$location){
 
+
+
+
+
+
     $scope.goToLog =function(){
         $location.path('/logboek');
 
@@ -232,10 +282,18 @@ iccan.controller('TaakCtrl',['$scope','$http','$location',function($scope,$http,
 }]);
 
 iccan.controller('LogbCtrl',['$scope','$http',function($scope,$http){
+    $scope.check = false;
+    $scope.user = username;
 
+    $scope.answers = [];
+
+    $scope.answer = 1;
+    $scope.answers.push({'username':username});
+
+    var i = 1;
     var url = "http://iccan.be/scripts/logboek.php";
 
-var j =0;
+
 
     $http.get(url)
 
@@ -271,39 +329,146 @@ var j =0;
 
         });
 
-    $scope.nextQuestion=function(){
+
+    $scope.getHistory=function(){
+
+        $scope.user = username;
+
+        var url = "http://iccan.be/scripts/geschlogboek.php";
+        var FormData={
+            'username':$scope.user
+
+        };
+
+
+
+        $http({
+            method:'POST',
+            url:url,
+            data:FormData,
+            headers:{'Content-Type': 'application/x-www-form-urlencoded'}
+
+
+        })
+
+            .success(function(data,status){
+
+                $scope.vvragen = data.vragen;
+                $scope.vvraag = $scope.vvragen[0];
+
+                $scope.states = data.berichten;
+                $scope.state = $scope.states[0];
+                $scope.status = status;
+
+                alert($scope.state.succes);
+
+
+
+                if($scope.content.succes == 1 ){
+
+                    $location.path('/license');
+
+                }else{
+
+                    $scope.err = "Invalid username/password";
+
+                }
 
 
 
 
-        if(j<$scope.items.length){
-            $scope.item= $scope.items[j++];
+            })
+            .error(function(data,status){
 
 
-            if($scope.item.type=="schaal"){
-
-                $scope.check=true;
-
-                /*if($scope.answer<3){
+                $scope.status=status;
+                alert(status);
 
 
-                 }
-
-                 //$scope.answers.push([{'username':$rootscope.username,'id':$scope.item.id, 'antwoord':$scope.answer}
-                 ]);*/
+            })
 
 
 
+    }
+
+    $scope.nextLogQuestion=function(){
 
 
-            }else{
 
-                $scope.check =false;
 
-                // $scope.answers.push([{'username':$rootscope.username,'id':$scope.item.id, 'antwoord':$scope.answer}]);
+
+
+
+        if(i<$scope.items.length){
+
+
+     if($scope.item.type=="schaal"){
+                $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
+                $scope.item= $scope.items[i];
+                i++;
+
             }
+
+
+
+
+
+
+        }else{
+
+            $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
+
+
+
+            var uri = "http://iccan.be/scripts/aantwoordenlogboek.php";
+
+
+            $http({
+                method:'POST',
+                url:uri,
+                data:$scope.answers,
+                headers:{'Content-Type': 'application/x-www-form-urlencoded'}
+
+
+            })
+
+                .success(function(response,status){
+
+                    $scope.status = status;
+                    $scope.berichten = response.berichten;
+
+                    $scope.bericht = $scope.berichten[0];
+
+                    alert($scope.bericht.succes);
+
+
+
+                    // $location.path('/taakbeheer');
+
+
+
+
+                })
+                .error(function(response,status){
+
+                    $scope.content = response;
+                    $scope.status=status;
+                    alert(status);
+                    alert($scope.content);
+
+                })
+
+
+
         }
+
+
+
+
     };
+
+
+
 
 
 
@@ -313,11 +478,12 @@ var j =0;
 iccan.controller('VraagCtrl',['$scope','$http','$location',function($scope,$http,$location){
 
 var i=0;
-var j=1;
+var j=0;
 
 
 $scope.answers =[];
     $scope.answer = 1;
+    $scope.begin=true;
     $scope.answers.push({'username':username});
 
 
@@ -335,7 +501,9 @@ $scope.answers =[];
             $scope.items = data.vragen;
             $scope.status = status;
             $scope.item = $scope.items[0];
+            $scope.begin=true;
             $scope.sub = false;
+
 
             if($scope.item.type=="schaal"){
 
@@ -373,26 +541,48 @@ $scope.answers =[];
     $scope.nextQuestion=function(){
 
 
-        $scope.sub = false;
 
 
-
-       if(i<$scope.items.length){
-       $scope.item= $scope.items[i];
+        if(i<$scope.items.length-1){
 
 
-           if($scope.item.type=="schaal"){
+            if($scope.changetype==true){
+                $scope.item= $scope.items[i];
 
-               $scope.check=true;
+            }
 
-               if($scope.answer>2){
+
+            if($scope.item.type=="schaal"){
+
+                $scope.check=true;
+
+                if($scope.answer>2){
+
+                    $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
+
+                    i++;
+                    $scope.begin=false;
+
+                    if($scope.begin==false){
+
+
+                        $scope.item= $scope.items[i];
+
+                        if($scope.item.type=="janee"){
+                            alert($scope.item.naam);
+                            $scope.check=false;
+                            $scope.changetype=true;
+                        }
+
+                    }
+
+                }
+                else{
 
                    $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
+                    i++;
 
-                   i++;
-               }
 
-                else{
 
 
                    var ur = "http://iccan.be/scripts/subvraag.php";
@@ -401,7 +591,7 @@ $scope.answers =[];
                    $http({
                        method:'POST',
                        url:ur,
-                       data:{vraagid:$scope.items[i].id},
+                       data:{vraagid:$scope.items[i-1].id},
                        headers:{'Content-Type': 'application/x-www-form-urlencoded'}
 
 
@@ -419,21 +609,14 @@ $scope.answers =[];
 
 
                            if($scope.bericht.succes==0){
-                               i++;
+
+                               $scope.item= $scope.items[i];
 
                            }else{
 
                                $scope.item = $scope.subvragen[0];
                                 $scope.sub =true;
                            }
-
-
-
-
-
-
-
-
 
                        })
                        .error(function(data,status){
@@ -451,19 +634,28 @@ $scope.answers =[];
 
                }
 
-           else{
+            else{
+                if($scope.changetype==true){
+                    $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
+                    i++;
 
-               $scope.check =false;
 
-              $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
-               i++;
-           }
+                }
+                $scope.check =false;
 
+                $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
+                i++;
+                $scope.begin=false;
+
+
+            }
        }else{
 
+           $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
 
 
-           var uri = "http://iccan.be/scripts/antwoordenvraag.php";
+
+           var uri = "http://iccan.be/scripts/aantwoordenvragen.php";
 
 
            $http({
@@ -503,11 +695,15 @@ $scope.answers =[];
 
     $scope.nextSubQuestion =function(){
 
-        alert("hehe");
 
 
-        if(j<$scope.subvragen.length){
-            $scope.item= $scope.subvragen[j];
+
+        if(j<$scope.subvragen.length-1){
+
+
+
+
+
 
 
             if($scope.item.type=="schaal"){
@@ -516,9 +712,16 @@ $scope.answers =[];
 
                 if($scope.answer>2){
 
+                    $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
+
+
 
                     $scope.item = $scope.items[i];
+                    if($scope.item.type=="schaal"){
+                        $scope.check=true;
+                    }
                     $scope.sub = false;
+                    $scope.overgang = true;
 
 
 
@@ -529,9 +732,11 @@ $scope.answers =[];
 
                 else{
 
-
                     $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
                     j++;
+                    $scope.item= $scope.subvragen[j];
+
+
 
 
 
@@ -543,10 +748,16 @@ $scope.answers =[];
 
             else{
 
-                $scope.check =false;
 
+                $scope.check =false;
                 $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
-                i++;
+                j++;
+                $scope.item= $scope.subvragen[j];
+
+
+
+
+
             }
 
 
@@ -555,9 +766,16 @@ $scope.answers =[];
 
         }else{
 
+            $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
+
             $scope.item = $scope.items[i];
+
+            if($scope.item.type=="schaal"){
+                $scope.check=true;
+            }
+            $scope.overgang = true;
             $scope.sub = false;
-            i++;
+
 
         }};
 

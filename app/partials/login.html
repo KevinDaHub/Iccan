@@ -18,7 +18,7 @@
 
 </style>
 
-<div style="background-color: #5078E8;" class="navbar navbar-app navbar-absolute-top">
+<div style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-top">
     <div class="im">
         <img src="logow.png" />
     </div>
@@ -43,22 +43,22 @@
 
             <div class="input-group">
                 <span class="input-group-addon">G</span>
-                <input class="form-control" type="text"  ng-model="user" placeholder="Gebruikersnaam..." />
+                <input class="form-control" type="text"  ng-minlength=2 ng-maxlength=20 ng-model="user" placeholder="Gebruikersnaam..." required />
             </div>
         </div>
         <div class="form-group">
 
             <div class="input-group">
                 <span class="input-group-addon">*</span>
-                <input class="form-control" name="psw" type="password" maxlength="25" size="18" ng-model="pass" placeholder="Wachtwoord..." />
+                <input class="form-control" name="psw" type="password" ng-minlength=4 ng-maxlength=18 ng-model="pass" placeholder="Wachtwoord..." required />
             </div>
         </div>
         <div ng-cloak ng-show="createMode">
 
             <div class="form-group">
                 <div class="input-group">
-                    <span class="input-group-addon">**</span>
-                    <input class="form-control" size="18" type="password" ng-model="confirm" placeholder="Confirm wachtwoord" />
+                    <span class="input-group-addon">*</span>
+                    <input class="form-control" size="18" type="password" ng-model="confirm" ng-minlength=4 ng-maxlength=18 placeholder="Confirm wachtwoord" required />
                 </div>
             </div>
 
@@ -66,7 +66,7 @@
                 <div class="input-group">
                     <span class="input-group-addon">N</span>
 
-                    <input class="form-control" size="18" type="text" ng-model="naam" placeholder="Naam..." />
+                    <input class="form-control" size="18" type="text" ng-model="naam"  ng-minlength=2 ng-maxlength=20 placeholder="Naam..." required />
                 </div>
             </div>
 
@@ -74,7 +74,7 @@
             <div class="form-group">
                 <div class="input-group">
                     <span class="input-group-addon">AN</span>
-                    <input class="form-control" size="18" type="text" ng-model="achternaam" placeholder="Achternaam..." />
+                    <input class="form-control" size="18" type="text" ng-model="achternaam" ng-minlength=2 ng-maxlength=20 placeholder="Achternaam..." required />
                 </div>
             </div>
 
@@ -83,7 +83,7 @@
                 <div class="input-group">
                     <span class="input-group-addon">@</span>
 
-                    <input class="form-control" size="18" type="email" ng-model="email" placeholder="Email..." />
+                    <input class="form-control" size="18" type="email" ng-model="email" placeholder="Email..." required />
                 </div>
             </div>
 
@@ -91,11 +91,11 @@
             <div class="form-group">
                 <div class="input-group">
       <span class="input-group-addon">
-        <input type="checkbox">
+        <input ng-model="geslacht" type="radio" value="m" required>
       </span>
                     <p class="form-control">M</p>
              <span class="input-group-addon">
-        <input type="checkbox">
+        <input ng-model="geslacht"  type="radio" value="v" required>
       </span>
                     <p class="form-control">V</p>
 
@@ -106,7 +106,7 @@
                 <div class="input-group">
                     <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
                     <div class="input-group date" id="datetimepicker1">
-                        <input type="text" class="form-control" />
+                        <input type="text" class="form-control" required />
 
 
 
@@ -115,8 +115,14 @@
             </div>
 
 
+            <div class="control-group input-append">
+                <input type="text" ng-model="datepicker.date" data-date-format="dd/mm/yyyy" bs-datepicker>
+                <button type="button" class="btn" data-toggle="datepicker"><i class="icon-calendar"></i></button>
+            </div>
+
 
         </div>
+
 
 
 
@@ -133,6 +139,6 @@
 
 
 </div>
-<div  style="background-color: #5078E8;" class="navbar navbar-app navbar-absolute-bottom">
+<div  style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-bottom">
     <!-- ... -->
 </div>
