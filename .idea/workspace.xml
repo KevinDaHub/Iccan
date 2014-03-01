@@ -71,10 +71,19 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="index.html" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="index.html" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="23" column="7" selection-start="1006" selection-end="1006" vertical-scroll-proportion="0.26757368" vertical-offset="155" max-vertical-offset="1037">
+            <state line="23" column="7" selection-start="1006" selection-end="1006" vertical-scroll-proportion="-9.076923" vertical-offset="155" max-vertical-offset="1037">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="config.xml" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/app/config.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="22" column="9" selection-start="583" selection-end="583" vertical-scroll-proportion="0.41189426" vertical-offset="0" max-vertical-offset="908">
               <folding />
             </state>
           </provider>
@@ -84,15 +93,6 @@
         <entry file="file://$PROJECT_DIR$/app/partials/statistiek.html">
           <provider selected="true" editor-type-id="text-editor">
             <state line="13" column="0" selection-start="269" selection-end="269" vertical-scroll-proportion="0.0" vertical-offset="221" max-vertical-offset="476">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="test.html" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app/test.html">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="30" column="0" selection-start="879" selection-end="879" vertical-scroll-proportion="0.0" vertical-offset="510" max-vertical-offset="850">
               <folding />
             </state>
           </provider>
@@ -139,7 +139,6 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/app/js/controllers.js" />
         <option value="$PROJECT_DIR$/app/js/hamburger.js" />
         <option value="$PROJECT_DIR$/app/css/hamburger.css" />
         <option value="$PROJECT_DIR$/app/partials/test.html" />
@@ -155,6 +154,7 @@
         <option value="$PROJECT_DIR$/app/partials/statistiek.html" />
         <option value="$PROJECT_DIR$/app/partials/logbook.html" />
         <option value="$PROJECT_DIR$/app/partials/taakbeheer.html" />
+        <option value="$PROJECT_DIR$/app/config.xml" />
       </list>
     </option>
   </component>
@@ -255,43 +255,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="js" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Iccan" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Iccan" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="app" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
               <option name="myItemId" value="img" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Iccan" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="Iccan" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="app" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="css" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -417,11 +381,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/app/css/mobile-angular-ui-base.css">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="19" column="38" selection-start="764" selection-end="764" vertical-scroll-proportion="0.0" vertical-offset="408" max-vertical-offset="110092" />
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app/js/bootstrap.js">
       <provider selected="true" editor-type-id="text-editor">
         <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="34204" />
@@ -523,7 +482,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="23" column="7" selection-start="1006" selection-end="1006" vertical-scroll-proportion="0.26757368" vertical-offset="155" max-vertical-offset="1037">
+        <state line="23" column="7" selection-start="1006" selection-end="1006" vertical-scroll-proportion="-9.076923" vertical-offset="155" max-vertical-offset="1037">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/config.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="22" column="9" selection-start="583" selection-end="583" vertical-scroll-proportion="0.41189426" vertical-offset="0" max-vertical-offset="908">
           <folding />
         </state>
       </provider>
