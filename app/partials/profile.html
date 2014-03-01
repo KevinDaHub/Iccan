@@ -1,0 +1,92 @@
+<div style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-top">
+
+
+    <div class="im">
+        <img src="logow.png" />
+    </div>
+    <p class="titelheader" >Profiel</p>
+</div>
+
+
+<div id="main">
+
+    <h2 class="h2">{{username}}</h2>
+
+
+    <div  ng-hide="edit" >
+        <button class="btn btn-primary"  ng-click="editUser()">Wijzig</button>
+        <ul>
+            <li>Voornaam: {{item.voornaam}}</li>
+            <li>Naam: {{item.naam}}</li>
+            <li>Email: {{item.email}}</li>
+            <li>Geboortedatum: {{item.geboortedatum}}</li>
+
+        </ul>
+
+
+
+    </div>
+
+
+
+
+
+
+    <form ng-show="edit" class="form">
+
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon">N</span>
+
+                    <input class="form-control" size="18" type="text" ng-model="voornaam"  ng-minlength=2 ng-maxlength=20 placeholder={{item.voornaam}} required />
+                </div>
+            </div>
+
+
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon">AN</span>
+                    <input class="form-control" size="18" type="text" ng-model="naam" ng-minlength=2 ng-maxlength=20 placeholder={{item.naam}} required />
+                </div>
+            </div>
+
+
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon">@</span>
+
+                    <input class="form-control" size="18" type="email" ng-model="email" placeholder={{item.email}} required />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                    <div class="input-group date" id="datetimepicker1">
+                        <input type="text" class="form-control" ng-model="geboortedatum" placeholder={{item.geboortedatum}} required />
+
+
+
+                    </div>
+                </div>
+            </div>
+
+
+
+
+        <button class="btn btn-primary"  ng-click="applyChanges()">Pas aan</button>
+
+
+        <p ng-show="err" class="error">{{err}}</p>
+    </form>
+
+
+
+
+
+
+</div>
+<div  style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-bottom">
+    <button id="fixedbutton" ng-click="accept()" class="btn-primary">Accepteer ></button>
+    <button id="fixedleftbutton" ng-click="goBack()" class="btn-primary">< Terug </button>
+</div>

@@ -1,11 +1,15 @@
-<div style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-top">
+<div style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-top" >
 
 
     <div class="im">
         <img src="logow.png" />
     </div>
     <p class="titelheader" >Logboek</p>
+
+    <button id="fixedtopbutton" ng-click="toProfile()" class="btn-success">Profiel ></button>
+
 </div>
+
 <a toggle="on" target="myOverlay"  class="btn-success" href>Toggle</a>
 
 <div overlay="myOverlay">
@@ -58,6 +62,10 @@
 
                 <p>{{vraag.naam}} : {{vraag.antwoord}}</p>
 
+
+
+
+
             </div>
 
 
@@ -65,4 +73,6 @@
 
 <div  style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-bottom">
     <button id="fixedbutton" ng-click="nextLogQuestion()" class="btn-success">Antwoord ></button>
+    <button id="fixedleftbutton" ng-click="goBack()" class="btn-success">< Terug</button>
+    <button id="fixedmidbutton" ng-click="goStatik()" class="btn-success">< Statistieken ></button>
 </div>

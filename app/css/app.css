@@ -19,30 +19,7 @@
 
 }
 
-ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-li:hover{
 
-    background-color:#000;
-
-}
-
-li {
-    float: left;
-
-    border-bottom-width: 0;
-    margin: 3px 3px 0px 3px;
-    padding: 10px 10px 0px 10px;
-    font-size:1.5em;
-    background-color: #fff;
-    color: #2a6496;
-    cursor: pointer;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-}
 #mainView {
 
     clear: both;
@@ -87,6 +64,34 @@ li {
 
 
 }
+
+#fixedtopbutton{
+
+    position:fixed;
+    top:0;
+    right:0;
+    height:50px;
+    width:100px;
+}
+#fixedleftbutton{
+
+    position:fixed;
+    bottom:0;
+    left:0;
+    height:50px;
+    width:100px;
+}
+
+#fixedmidbutton{
+
+    position:fixed;
+    bottom:0;
+    left:750px;
+
+    height:50px;
+    width:150px;
+}
+
 
 #fixedbutton{
 
