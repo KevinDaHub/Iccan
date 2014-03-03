@@ -82,6 +82,7 @@
     width: 100%;
 
     padding: 100px 100px 100% 100px;
+    -webkit-overflow-scrolling: touch;
 
 }
 
