@@ -1,69 +1,6 @@
 /* app css stylesheet */
 
-.hide {
-   display: none;
-}
 
-.menu {
-  list-style: none;
-  border-bottom: 0.1em solid black;
-
-  padding: 0 0 0.5em;
-}
-
-.list-group-item{
-    cursor:pointer;
-    width:30%;
-
-
-
-}
-
-
-#mainView {
-
-    clear: both;
-    padding: 0 1em;
-}
-.active {
-    background-color: #FFF;
-    color: #000;
-}
-.table{
-    width:30%;
-
-}
-.list-group-item:hover{
- color:#269abc;
-
-
-}
-
-.modal-footer{
-
-    width:10%;
-}
-
-.form{
-    width:30%;
-}
-{
-
-    width:40%;
-}
-#menuMain{
-
-
-
-
-
-
-}
-.artikel{
-    width: 600px;
-
-
-}
 
 #fixedtopbutton{
 
@@ -124,15 +61,10 @@
 
 }
 
-.imglogo{
-
-    background-image:url('logoiccanw.png');
-
-}
 
 .logo{
 
-    margin-left:150px;
+    margin-left:53%;
     padding-bottom:50px;
 
 }
@@ -153,18 +85,11 @@
 
 }
 
-#menu ul {
-    margin: 0;
+.form{
 
-    list-style: none;
-    color: #333;
-
-    overflow: hidden;
+    margin-left:50%;
 }
 
-#menu li {
-    display:inline-block;
-}
 
 body{
     padding: 0px;
@@ -172,8 +97,6 @@ body{
     font-family: Cambria, Georgia, serif;
     line-height: 1.2em;
     font-size:100%;
-    max-width:1920px;
-    max-height:1080px;
     overflow-x:hidden;
 
 
@@ -202,15 +125,7 @@ body{
 }
 
 
-nav {
-    left: 0px;
-    top: 0px;
-    position: fixed;
-    z-index: 0;
-    width: 70%;
 
-
-    }
 
 
 #hamburger div {
@@ -249,50 +164,6 @@ background-color:#333;
 
 
 
-.menu:before {
-  content: "[";
-}
-
-.menu:after {
-  content: "]";
-}
-
-.menu > li {
-  display: inline;
-}
-
-.menu > li.hide {
-   display: none;
-}
-
-.menu > li:before {
-  content: "|";
-  padding-right: 0.3em;
-}
-
-.menu > li:nth-child(1):before {
-  content: "";
-  padding: 0;
-}
-
-p.status {
-   color: red;
-}
-
-p.status.good, p.good {
-   color: green;
-}
-
-form label {
-   display: block;
-   margin: 15px 0;
-}
-
-form label span {
-   display: block;
-   font-weight: bold;
-}
-
 .error {
    color: red;
 }
@@ -326,7 +197,7 @@ fieldset {
         margin: 0 0 20px 0;
     }
 }
-@media screen and (max-width: 768px)
+/*@media screen and (max-width: 768px)
 {
     .sidebar{
         margin: 0 0 20px 1%;
@@ -376,4 +247,4 @@ fieldset {
         }
 
 
-}
+}*/

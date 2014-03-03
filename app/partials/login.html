@@ -3,15 +3,14 @@
 
     @media screen and (max-width: 768px) and (orientation:portrait)
     {
-        .form{
-            width:100%
-        }
+
         #main{
 
             float:left;
             width:100%;
             padding-left: 0px;
             padding-right: 0px;
+            margin: 0 0 0 0;
         }
 
     }
@@ -32,30 +31,30 @@
 
 </div>
 
-<div ng-show="online" id="main">
+<div ng-show="online">
+    <img class="logo" src="logoiccan.png" />
+
+
+    <form  role="form" class="form"  >
 
 
 
-    <form  class="form">
 
 
 
 
 
-
-
-        <img class="logo" src="logoiccan.png" />
         <div class="form-group">
 
             <div class="input-group">
-                <span class="input-group-addon">G</span>
+
                 <input class="form-control" type="text"  ng-minlength=2 ng-maxlength=20 ng-model="user" placeholder="Gebruikersnaam..." required />
             </div>
         </div>
         <div class="form-group">
 
             <div class="input-group">
-                <span class="input-group-addon">*</span>
+
                 <input class="form-control" name="psw" type="password" ng-minlength=4 ng-maxlength=18 ng-model="pass" placeholder="Wachtwoord..." required />
             </div>
         </div>
@@ -63,14 +62,14 @@
 
             <div class="form-group">
                 <div class="input-group">
-                    <span class="input-group-addon">*</span>
+
                     <input class="form-control" size="18" type="password" ng-model="confirm" ng-minlength=4 ng-maxlength=18 placeholder="Confirm wachtwoord" required />
                 </div>
             </div>
 
             <div class="form-group">
                 <div class="input-group">
-                    <span class="input-group-addon">N</span>
+
 
                     <input class="form-control" size="18" type="text" ng-model="naam"  ng-minlength=2 ng-maxlength=20 placeholder="Naam..." required />
                 </div>
@@ -79,7 +78,7 @@
 
             <div class="form-group">
                 <div class="input-group">
-                    <span class="input-group-addon">AN</span>
+
                     <input class="form-control" size="18" type="text" ng-model="achternaam" ng-minlength=2 ng-maxlength=20 placeholder="Achternaam..." required />
                 </div>
             </div>
@@ -87,7 +86,7 @@
 
             <div class="form-group">
                 <div class="input-group">
-                    <span class="input-group-addon">@</span>
+
 
                     <input class="form-control" size="18" type="email" ng-model="email" placeholder="Email..." required />
                 </div>
@@ -96,23 +95,23 @@
 
             <div class="form-group">
                 <div class="input-group">
-      <span class="input-group-addon">
+
         <input ng-model="geslacht" type="radio" value="m" required>
-      </span>
-                    <p class="form-control">M</p>
-             <span class="input-group-addon">
+
+                   M
+
         <input ng-model="geslacht"  type="radio" value="v" required>
-      </span>
-                    <p class="form-control">V</p>
+
+                    V
 
                 </div>
             </div>
 
             <div class="form-group">
                 <div class="input-group">
-                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+
                     <div class="input-group date" id="datetimepicker1">
-                        <input type="text" class="form-control" required />
+                        <input type="text" class="form-control" placeholder="Geboortedatum" required />
 
 
 
@@ -121,10 +120,6 @@
             </div>
 
 
-            <div class="control-group input-append">
-                <input type="text" ng-model="datepicker.date" data-date-format="dd/mm/yyyy" bs-datepicker>
-                <button type="button" class="btn" data-toggle="datepicker"><i class="icon-calendar"></i></button>
-            </div>
 
 
         </div>
@@ -134,6 +129,7 @@
 
 
 
+        <div class="checkbox" data-ng-hide="createMode"><label><input type="checkbox">Remember me</label></div>
         <button  class="btn btn-primary" ng-click="login()" ng-hide="createMode">Login</button>
         <button  class="btn btn-default" ng-click="createMode = true" ng-hide="createMode">Inschrijven</button>
         <button class="btn btn-primary" ng-cloak ng-show="createMode" ng-click="createAccount()">Klaar</button>
