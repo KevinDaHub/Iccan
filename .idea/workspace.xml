@@ -71,10 +71,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="index.html" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="index.html" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="13" column="69" selection-start="693" selection-end="693" vertical-scroll-proportion="0.2505669" vertical-offset="0" max-vertical-offset="1037">
+            <state line="13" column="69" selection-start="693" selection-end="693" vertical-scroll-proportion="-8.5" vertical-offset="0" max-vertical-offset="1037">
               <folding />
             </state>
           </provider>
@@ -98,10 +98,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="login.html" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="login.html" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/partials/login.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="18" column="0" selection-start="268" selection-end="268" vertical-scroll-proportion="-9.807693" vertical-offset="51" max-vertical-offset="2465">
+            <state line="36" column="6" selection-start="658" selection-end="658" vertical-scroll-proportion="0.6938776" vertical-offset="0" max-vertical-offset="2686">
               <folding />
             </state>
           </provider>
@@ -152,13 +152,13 @@
         <option value="$PROJECT_DIR$/app/partials/logbook.html" />
         <option value="$PROJECT_DIR$/app/partials/taakbeheer.html" />
         <option value="$PROJECT_DIR$/app/config.xml" />
-        <option value="$PROJECT_DIR$/app/partials/login.html" />
         <option value="$PROJECT_DIR$/app/css/app.css" />
+        <option value="$PROJECT_DIR$/app/partials/login.html" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-8" />
+    <option name="x" value="1912" />
     <option name="y" value="-8" />
     <option name="width" value="1936" />
     <option name="height" value="1066" />
@@ -344,7 +344,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1066" extended-state="7" />
+    <frame x="1912" y="-8" width="1936" height="1066" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -467,13 +467,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app/partials/login.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="18" column="0" selection-start="268" selection-end="268" vertical-scroll-proportion="-9.807693" vertical-offset="51" max-vertical-offset="2465">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app/css/app.css">
       <provider selected="true" editor-type-id="text-editor">
         <state line="84" column="38" selection-start="924" selection-end="924" vertical-scroll-proportion="0.0" vertical-offset="1122" max-vertical-offset="4352">
@@ -483,7 +476,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="69" selection-start="693" selection-end="693" vertical-scroll-proportion="0.2505669" vertical-offset="0" max-vertical-offset="1037">
+        <state line="13" column="69" selection-start="693" selection-end="693" vertical-scroll-proportion="-8.5" vertical-offset="0" max-vertical-offset="1037">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/partials/login.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="36" column="6" selection-start="658" selection-end="658" vertical-scroll-proportion="0.6938776" vertical-offset="0" max-vertical-offset="2686">
           <folding />
         </state>
       </provider>
