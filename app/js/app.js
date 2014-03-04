@@ -40,7 +40,7 @@ iccan.directive('youtube', function($sce) {
         restrict: 'EA',
         scope: { code:'=' },
         replace: true,
-        template: '<div style="height:400px;"><iframe style="overflow:hidden;height:100%;width:100%" width="100%" height="100%" src="{{url}}" frameborder="0" allowfullscreen></iframe></div>',
+        template: '<div style="height:400px;"> <iframe style="overflow:hidden;height:100%;width:100%" width="100%" height="100%" src="{{url}}" frameborder="0" allowfullscreen></iframe></div>',
         link: function (scope) {
             console.log('here');
             scope.$watch('code', function (newVal) {
@@ -299,9 +299,9 @@ iccan.config(['$routeProvider',function($routeProvider){
         templateUrl:'partials/statistiek.html',
         controller:'StatisticCtrl'
         })
-        .when('/register',{
-            templateUrl:'partials/register.html',
-            controller:'RegisterCtrl'
+        .when('/lostpsw',{
+            templateUrl:'partials/lostpsw.html',
+            controller:'PasswordCtrl'
         })
 
         .otherwise({
@@ -382,27 +382,15 @@ iccan.controller('StatisticCtrl',['$scope','$http','$location',function($scope,$
 
 }]);
 
-iccan.controller('RegisterCtrl',['$scope','$location','$http',function($scope,$location,$http){
+iccan.controller('PasswordCtrl',['$scope','$location','$http',function($scope,$location,$http){
 
 
 
-    $scope.vragen = [{
-        vraag:'Vul je gebruikernaam in',
-        omschrijving:'Je gebruikt dit om in te loggen'
 
 
-    },
-        {
-            vraag:'Wat is je volledige naam?',
-            omschrijving:'Zo weten we hoe we u moeten aanspreken'
+    $scope.sendPassword = function(){
 
-        }
-    ]
-
-    $scope.vraag = $scope.vragen[0];
-
-    $scope.nextOne = function(){
-
+        $scope.succ ="Mail gestuurd!"
 
     }
 
@@ -426,6 +414,12 @@ iccan.controller('LoginCtrl', ['$scope','$location','$http', function($scope,$lo
 
     $scope.titel="Login";
 
+    $scope.lostpsw = function(){
+
+        $location.path('/lostpsw');
+
+    };
+
 $scope.register = function(){
 
   $location.path('/register');
@@ -440,7 +434,7 @@ $scope.register = function(){
             'name':$scope.naam,
             'surname':$scope.achternaam,
             'sex':$scope.geslacht,
-            'birthdate':"25/07/1992",
+            'birthdate':$scope.geboortedatum,
             'email':$scope.email
 
         };
@@ -672,7 +666,7 @@ iccan.controller('ProfileCtrl',['$scope','$http','$location',function($scope,$ht
 
 
 
-    }
+    };
 
 
     var url = "http://iccan.be/scripts/getuser.php";
@@ -726,38 +720,6 @@ iccan.controller('ProfileCtrl',['$scope','$http','$location',function($scope,$ht
 
 }]);
 
-iccan.service('VraagService',function(){
-
-    var i =0;
-
-    var vragen = [{
-        id: 1,
-        'name': 'Vraag 1',
-        'type': 'schaal'
-    },
-        {
-            id: 2,
-            'name': 'Vraag 2',
-            'type': 'janee'
-        }];
-
-
-    this.get = function(id) {
-        for (i in vragen) {
-            if (vragen[i].id == id) {
-                return vragen[i];
-            }
-        }
-        return 0;
-
-    };
-
-    this.list = function() {
-        return vragen;
-    };
-
-
-});
 
 iccan.controller('TaakCtrl',['$scope','$http','$location',function($scope,$http,$location){
 
@@ -825,14 +787,18 @@ $scope.nextFile = function(url,type){
 
 
 if(type=="youtube"){
+    $scope.image="";
+    $scope.imageshow =false;
     $scope.code = "https://www.youtube.com/v/watch?v="+url+"&html5=True";
 
 }else{
 
+    $scope.imageshow=true;
     $scope.stringer = url.split("-");
 
     $scope.viewer = $scope.stringer[0];
     $scope.site = "http://iccan.be/"+$scope.viewer;
+    $scope.image = "http://iccan.be/"+$scope.stringer[1];
 
     $scope.code = $scope.site;
 }
@@ -861,6 +827,14 @@ iccan.controller('LogbCtrl',['$scope','$http','$location',function($scope,$http,
 
     $scope.answer = 1;
     $scope.answers.push({'username':username});
+
+    $scope.value = "10";
+    $scope.options = {
+        from: 1,
+        to: 10,
+        step: 1,
+        dimension: " happy"
+    };
 
     var i = 1;
     var url = "http://iccan.be/scripts/logboek.php";
@@ -1125,10 +1099,9 @@ $scope.answers =[];
         if(i<$scope.items.length-1){
 
 
-            if($scope.changetype==true){
-                $scope.item= $scope.items[i];
 
-            }
+
+
 
 
             if($scope.item.type=="schaal"){
@@ -1148,9 +1121,9 @@ $scope.answers =[];
                         $scope.item= $scope.items[i];
 
                         if($scope.item.type=="janee"){
-                            alert($scope.item.naam);
+
                             $scope.check=false;
-                            $scope.changetype=true;
+
                         }
 
                     }
@@ -1190,11 +1163,21 @@ $scope.answers =[];
                            if($scope.bericht.succes==0){
 
                                $scope.item= $scope.items[i];
+                               if($scope.item.type=="schaal"){
+                                   $scope.check=true;
+                               }else{
+                                   $scope.check=false;
+                               }
 
                            }else{
 
                                $scope.item = $scope.subvragen[0];
                                 $scope.sub =true;
+                               if($scope.item.type=="schaal"){
+                                   $scope.check=true;
+                               }else{
+                                   $scope.check =false;
+                               }
                            }
 
                        })
@@ -1214,23 +1197,20 @@ $scope.answers =[];
                }
 
             else{
-                if($scope.changetype==true){
-                    $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
-                    i++;
 
-
-                }
                 $scope.check =false;
 
                 $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
-                i++;
                 $scope.begin=false;
+                i++;
+
+
 
 
             }
        }else{
 
-           $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
+
 
 
 
@@ -1296,11 +1276,15 @@ $scope.answers =[];
 
 
                     $scope.item = $scope.items[i];
-                    if($scope.item.type=="schaal"){
-                        $scope.check=true;
-                    }
                     $scope.sub = false;
                     $scope.overgang = true;
+
+                    if($scope.item.type=="schaal"){
+                        $scope.check=true;
+                    }else{
+                        $scope.check=false;
+                    }
+
 
 
 
@@ -1314,6 +1298,7 @@ $scope.answers =[];
                     $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
                     j++;
                     $scope.item= $scope.subvragen[j];
+
 
 
 
@@ -1348,12 +1333,15 @@ $scope.answers =[];
             $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
 
             $scope.item = $scope.items[i];
+            $scope.overgang = true;
+            $scope.sub = false;
 
             if($scope.item.type=="schaal"){
                 $scope.check=true;
+            }else{
+                $scope.check=false;
             }
-            $scope.overgang = true;
-            $scope.sub = false;
+
 
 
         }};

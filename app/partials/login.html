@@ -5,7 +5,7 @@
 
     #container{
         height:800px;
-        margin-left:25%;
+      ;
 
     }
     body{
@@ -94,11 +94,11 @@
             <div class="form-group">
                 <div class="input-group">
 
-        <input ng-model="geslacht" type="radio" value="m" required>
+        <input ng-model="geslacht" type="radio" value="m" >
 
                    M
 
-        <input ng-model="geslacht"  type="radio" value="v" required>
+        <input ng-model="geslacht"  type="radio" value="v">
 
                     V
 
@@ -109,7 +109,7 @@
                 <div class="input-group">
 
                     <div class="input-group date" id="datetimepicker1">
-                        <input type="text" class="form-control" placeholder="Geboortedatum" required />
+                        <input type="date" data-date-format="dd/mm/yyyy" class="form-control" placeholder="Geboortedatum" required />
 
 
 
@@ -127,7 +127,8 @@
 
 
 
-        <div class="checkbox" data-ng-hide="createMode"><label><input type="checkbox">Remember me</label></div>
+        <div class="checkbox" data-ng-hide="createMode"><label><input type="checkbox">Remember me</label> <a  href="#/lostpsw">Wachtwoord vergeten</a></div>
+
         <button  class="btn btn-primary" ng-click="login()" ng-hide="createMode">Login</button>
         <button  class="btn btn-default" ng-click="createMode = true" ng-hide="createMode">Inschrijven</button>
         <button class="btn btn-primary" ng-cloak ng-show="createMode" ng-click="createAccount()">Klaar</button>

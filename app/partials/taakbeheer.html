@@ -44,6 +44,7 @@
         <span class="btn btn-default">Cancel</span>
     </p>
 </div>-->
+        <div id="maintaak">
 
 <div class="panel-group" id="accordion">
     <div class="panel panel-default" ng-repeat="item in items">
@@ -59,6 +60,9 @@
             <div class="panel-body">
 
 
+                <div data-ng-show="imageshow">
+                    <img src={{image}} height="150px" width="150px">
+                </div>
 
 
                 <div youtube code="code" ></div>
@@ -70,11 +74,12 @@
 
 
 
-
-
+</div>
+</div>
 
 
 <div  style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-bottom">
     <button id="fixedbutton" ng-click="goToLog()" class="btn-success">Logboek ></button>
 
 </div>
+

@@ -9,6 +9,7 @@
     <button id="fixedtopbutton" ng-click="toProfile()" class="btn-success">Profiel ></button>
 
 </div>
+        <!--
 
 <a toggle="on" target="myOverlay"  class="btn-success" href>Toggle</a>
 
@@ -37,16 +38,18 @@
         <span class="btn btn-default">Cancel</span>
     </p>
 </div>
+-->
+        <div id="main">
 
 
 <div class="vraag" >
     <p>{{item.naam}}</p>
 </div>
 <div class="antwoord" data-ng-show="check" >
-    <label>1<input type="radio" ng-model="answer" name="options" value="1"></label>
-    <label>2<input type="radio" ng-model="answer" name="options" value="2"></label>
-    <label>3<input type="radio" ng-model="answer" name="options" value="3"></label>
-    <label>4<input type="radio" ng-model="answer" name="options" value="4"></label>
+    <div>
+        <input ng-model="value"  type="range" id="mySlider1" slider options="options" />
+        {{value}}
+    </div>
 </div>
 
 <div class="antwoord" data-ng-hide="check">
@@ -71,8 +74,9 @@
 
         </div>
 
+            </div>
 <div  style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-bottom">
     <button id="fixedbutton" ng-click="nextLogQuestion()" class="btn-success">Antwoord ></button>
     <button id="fixedleftbutton" ng-click="goBack()" class="btn-success">< Terug</button>
-    <button id="fixedmidbutton" ng-click="goStatik()" class="btn-success">< Statistieken ></button>
+ <!--   <button id="fixedmidbutton" ng-click="goStatik()" class="btn-success">< Statistieken ></button>-->
 </div>
