@@ -29,7 +29,7 @@
       <file leaf-file-name="app.css" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/css/app.css">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="84" column="38" selection-start="924" selection-end="924" vertical-scroll-proportion="0.0" vertical-offset="1122" max-vertical-offset="4352">
+            <state line="72" column="0" selection-start="704" selection-end="704" vertical-scroll-proportion="0.0" vertical-offset="918" max-vertical-offset="3859">
               <folding />
             </state>
           </provider>
@@ -47,17 +47,10 @@
       <file leaf-file-name="taakbeheer.html" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/partials/taakbeheer.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="29" column="14" selection-start="817" selection-end="817" vertical-scroll-proportion="0.0" vertical-offset="493" max-vertical-offset="1445">
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="profile.html" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app/partials/profile.html">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="35" column="0" selection-start="643" selection-end="643" vertical-scroll-proportion="0.0" vertical-offset="595" max-vertical-offset="1649">
-              <folding />
+            <state line="45" column="9" selection-start="1215" selection-end="1215" vertical-scroll-proportion="-17.653847" vertical-offset="306" max-vertical-offset="1462">
+              <folding>
+                <element signature="n#style#0;n#div#1;n#div#1;n#!!top" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -74,7 +67,7 @@
       <file leaf-file-name="index.html" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="13" column="69" selection-start="693" selection-end="693" vertical-scroll-proportion="-8.5" vertical-offset="0" max-vertical-offset="1037">
+            <state line="42" column="24" selection-start="1470" selection-end="1470" vertical-scroll-proportion="-25.5" vertical-offset="51" max-vertical-offset="1071">
               <folding />
             </state>
           </provider>
@@ -101,8 +94,10 @@
       <file leaf-file-name="login.html" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/partials/login.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="36" column="6" selection-start="658" selection-end="658" vertical-scroll-proportion="0.6938776" vertical-offset="0" max-vertical-offset="2686">
-              <folding />
+            <state line="39" column="37" selection-start="520" selection-end="520" vertical-scroll-proportion="0.11337868" vertical-offset="563" max-vertical-offset="2618">
+              <folding>
+                <element signature="n#style#0;n#div#2;n#!!top" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -110,12 +105,21 @@
       <file leaf-file-name="app.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/js/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="257" column="0" selection-start="8944" selection-end="8944" vertical-scroll-proportion="0.0" vertical-offset="3249" max-vertical-offset="19193">
+            <state line="443" column="32" selection-start="13406" selection-end="13406" vertical-scroll-proportion="0.0" vertical-offset="3672" max-vertical-offset="20060">
               <folding>
-                <element signature="e#1226#8534#0" expanded="false" />
-                <marker date="1393613187729" expanded="false" signature="748:761" placeholder="..." />
-                <marker date="1393613187729" expanded="false" signature="778:816" placeholder="..." />
+                <element signature="e#1367#8675#0" expanded="false" />
+                <marker date="1393892481938" expanded="false" signature="889:902" placeholder="..." />
+                <marker date="1393892481938" expanded="false" signature="919:957" placeholder="..." />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="register.html" pinned="false" current="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/app/partials/register.html">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="9" column="0" selection-start="70" selection-end="70" vertical-scroll-proportion="-5.8846154" vertical-offset="0" max-vertical-offset="697">
+              <folding />
             </state>
           </provider>
         </entry>
@@ -138,7 +142,6 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/app/js/hamburger.js" />
         <option value="$PROJECT_DIR$/app/css/hamburger.css" />
         <option value="$PROJECT_DIR$/app/partials/test.html" />
         <option value="$PROJECT_DIR$/app/test.html" />
@@ -146,19 +149,20 @@
         <option value="$PROJECT_DIR$/app/partials/license.html" />
         <option value="$PROJECT_DIR$/app/partials/vraagbeheer.html" />
         <option value="$PROJECT_DIR$/app/partials/profile.html" />
-        <option value="$PROJECT_DIR$/app/index.html" />
-        <option value="$PROJECT_DIR$/app/js/app.js" />
         <option value="$PROJECT_DIR$/app/partials/statistiek.html" />
         <option value="$PROJECT_DIR$/app/partials/logbook.html" />
-        <option value="$PROJECT_DIR$/app/partials/taakbeheer.html" />
         <option value="$PROJECT_DIR$/app/config.xml" />
+        <option value="$PROJECT_DIR$/app/partials/taakbeheer.html" />
+        <option value="$PROJECT_DIR$/app/index.html" />
         <option value="$PROJECT_DIR$/app/css/app.css" />
+        <option value="$PROJECT_DIR$/app/partials/register.html" />
+        <option value="$PROJECT_DIR$/app/js/app.js" />
         <option value="$PROJECT_DIR$/app/partials/login.html" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="1912" />
+    <option name="x" value="-8" />
     <option name="y" value="-8" />
     <option name="width" value="1936" />
     <option name="height" value="1066" />
@@ -236,6 +240,24 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="partials" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Iccan" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Iccan" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="app" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="js" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -344,7 +366,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="1912" y="-8" width="1936" height="1066" extended-state="6" />
+    <frame x="-8" y="-8" width="1936" height="1066" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -380,14 +402,11 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/app/js/bootstrap.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="34204" />
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app/js/tester.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="34" column="43" selection-start="700" selection-end="700" vertical-scroll-proportion="0.56938326" vertical-offset="61" max-vertical-offset="969" />
+        <state line="34" column="43" selection-start="700" selection-end="700" vertical-scroll-proportion="0.56938326" vertical-offset="61" max-vertical-offset="969">
+          <folding />
+        </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/js/CibulCalendar.min.js">
@@ -442,13 +461,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app/partials/taakbeheer.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="29" column="14" selection-start="817" selection-end="817" vertical-scroll-proportion="0.0" vertical-offset="493" max-vertical-offset="1445">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app/config.xml">
       <provider selected="true" editor-type-id="text-editor">
         <state line="21" column="0" selection-start="573" selection-end="573" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="476">
@@ -456,35 +468,53 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app/js/app.js">
+    <entry file="file://$PROJECT_DIR$/app/partials/taakbeheer.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="257" column="0" selection-start="8944" selection-end="8944" vertical-scroll-proportion="0.0" vertical-offset="3249" max-vertical-offset="19193">
+        <state line="45" column="9" selection-start="1215" selection-end="1215" vertical-scroll-proportion="-17.653847" vertical-offset="306" max-vertical-offset="1462">
           <folding>
-            <element signature="e#1226#8534#0" expanded="false" />
-            <marker date="1393613187729" expanded="false" signature="748:761" placeholder="..." />
-            <marker date="1393613187729" expanded="false" signature="778:816" placeholder="..." />
+            <element signature="n#style#0;n#div#1;n#div#1;n#!!top" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/css/app.css">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="84" column="38" selection-start="924" selection-end="924" vertical-scroll-proportion="0.0" vertical-offset="1122" max-vertical-offset="4352">
+        <state line="72" column="0" selection-start="704" selection-end="704" vertical-scroll-proportion="0.0" vertical-offset="918" max-vertical-offset="3859">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/index.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="69" selection-start="693" selection-end="693" vertical-scroll-proportion="-8.5" vertical-offset="0" max-vertical-offset="1037">
+        <state line="42" column="24" selection-start="1470" selection-end="1470" vertical-scroll-proportion="-25.5" vertical-offset="51" max-vertical-offset="1071">
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/partials/register.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="9" column="0" selection-start="70" selection-end="70" vertical-scroll-proportion="-5.8846154" vertical-offset="0" max-vertical-offset="697">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/js/app.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="443" column="32" selection-start="13406" selection-end="13406" vertical-scroll-proportion="0.0" vertical-offset="3672" max-vertical-offset="20060">
+          <folding>
+            <element signature="e#1367#8675#0" expanded="false" />
+            <marker date="1393892481938" expanded="false" signature="889:902" placeholder="..." />
+            <marker date="1393892481938" expanded="false" signature="919:957" placeholder="..." />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/partials/login.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="36" column="6" selection-start="658" selection-end="658" vertical-scroll-proportion="0.6938776" vertical-offset="0" max-vertical-offset="2686">
-          <folding />
+        <state line="39" column="37" selection-start="520" selection-end="520" vertical-scroll-proportion="0.11337868" vertical-offset="563" max-vertical-offset="2618">
+          <folding>
+            <element signature="n#style#0;n#div#2;n#!!top" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

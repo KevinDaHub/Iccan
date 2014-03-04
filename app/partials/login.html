@@ -1,13 +1,11 @@
 <style>
 
     #containr{
-        position: absolute;
-        top: 50px;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        overflow: scroll;
-        -webkit-overflow-scrolling: touch;
+
+        width:100%;
+        height: auto;
+
+        background: red;
 
 
     }
@@ -18,11 +16,7 @@
 
         #main{
 
-            float:left;
-            width:100%;
-            padding-left: 0px;
-            padding-right: 0px;
-            margin: 0 0 0 0;
+
         }
 
     }
@@ -38,14 +32,15 @@
 
 
 
-<div id="containr">
-    <img class="logo" src="logoiccan.png" />
-
-
-    <form  role="form" class="form"  >
+<div class="scrollable">
 
 
 
+<div class="scrollable-content">
+    <form  role="form" class="form" >
+
+
+        <img class="logo" src="logoiccan.png" />
 
 
 
@@ -145,9 +140,10 @@
         <p ng-show="err" class="error">{{err}}</p>
     </form>
 
+        </div>
+    </div>
 
 
-</div>
 <div  style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-bottom">
     <!-- ... -->
 </div>

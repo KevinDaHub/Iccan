@@ -64,41 +64,35 @@
 
 .logo{
 
-    margin-left:53%;
-    padding-bottom:50px;
+margin-left:100px;
+
 
 }
 
 #mainMenu{
-    float: left;
-    width: 100%;
 
-    padding: 100px 100px 100% 100px;
 
 }
 
 #main {
-    float: left;
-    width: 100%;
 
-    padding: 100px 100px 100% 100px;
-    -webkit-overflow-scrolling: touch;
 
 }
 
 .form{
 
-    margin-left:50%;
+    margin-top:10%;
+    width: 100%;
+    height: 300px;
+    margin-right: 20px;
+
+
+
 }
 
 
 body{
-    padding: 0px;
-    margin:0px;
-    font-family: Cambria, Georgia, serif;
-    line-height: 1.2em;
-    font-size:100%;
-    overflow-x:hidden;
+
 
 
 }
@@ -143,25 +137,6 @@ body{
     font-family: 'Open Sans Condensed', sans-serif;
 }
 
-#header {
-    color: #000;
-background-color:#333;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-}
-
-#footer {
-    color: #399;
-    padding:0;
-    margin:0;
-    clear: both;
-    width: 100%;
-}
-#footer h3 {
-    padding: 20px 20px;
-}
-
 
 
 
@@ -169,11 +144,7 @@ background-color:#333;
    color: red;
 }
 
-fieldset {
-   float: left;
-   margin-right: 25px;
-   padding: 25px;
-}
+
 @media screen and (max-width: 480px) {
     body{
         font-size: 120%;

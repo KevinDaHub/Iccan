@@ -2,6 +2,19 @@
 
 var username = "anonymous";
 
+
+$(document).ready(
+
+    function() {
+
+        $("html").niceScroll();
+        $("#containr").niceScroll({cursorcolor:"#00F"});
+    }
+
+);
+
+
+
 var iccan = angular.module('iccan',[ 'ngRoute','mobile-angular-ui','ngSanitize',"highcharts-ng"]);
 
 
@@ -286,6 +299,10 @@ iccan.config(['$routeProvider',function($routeProvider){
         templateUrl:'partials/statistiek.html',
         controller:'StatisticCtrl'
         })
+        .when('/register',{
+            templateUrl:'partials/register.html',
+            controller:'RegisterCtrl'
+        })
 
         .otherwise({
             redirectTo:'/login',
@@ -364,6 +381,35 @@ iccan.controller('StatisticCtrl',['$scope','$http','$location',function($scope,$
 
 
 }]);
+
+iccan.controller('RegisterCtrl',['$scope','$location','$http',function($scope,$location,$http){
+
+
+
+    $scope.vragen = [{
+        vraag:'Vul je gebruikernaam in',
+        omschrijving:'Je gebruikt dit om in te loggen'
+
+
+    },
+        {
+            vraag:'Wat is je volledige naam?',
+            omschrijving:'Zo weten we hoe we u moeten aanspreken'
+
+        }
+    ]
+
+    $scope.vraag = $scope.vragen[0];
+
+    $scope.nextOne = function(){
+
+
+    }
+
+
+
+
+}]);
 iccan.controller('LoginCtrl', ['$scope','$location','$http', function($scope,$location,$http,$templateCache) {
     $scope.user=null;
     $scope.email = null;
@@ -380,7 +426,12 @@ iccan.controller('LoginCtrl', ['$scope','$location','$http', function($scope,$lo
 
     $scope.titel="Login";
 
+$scope.register = function(){
 
+  $location.path('/register');
+
+
+};
     $scope.createAccount = function(){
         var url = "http://iccan.be/scripts/registreer.php";
         var FormData={
