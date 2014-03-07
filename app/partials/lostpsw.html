@@ -20,9 +20,7 @@
         filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#336d93', endColorstr='#3d556c',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
 
     }
-    .checkbox{
-        color:white;
-    }
+
 </style>
 
 
@@ -38,22 +36,22 @@
 
 
 
-<h4>Vul uw email in en we zenden u een wachtwoord reset</h4>
+<h5>Enter your username and email and we will send you an email</h5>
 
                     <div class="form-group">
                         <div class="input-group">
 
-
-                            <input class="form-control" size="18" type="email" ng-model="email" placeholder="Email..." required />
+                            <input class="form-control" size="18" type="text" ng-model="user" placeholder="Username..." required />
+                            <input class="form-control"  type="email" ng-model="email" placeholder="Email..." required />
                         </div>
                     </div>
 
-                <p data-ng-show="succ" class="success">{{succ}}</p>
-
-                <button class="btn btn-primary"  ng-click="sendPassword()">Send</button>
 
 
-                <p ng-show="err" class="error">{{err}}</p>
+                <button class="btn btn-success"  ng-click="sendPassword()">Send</button>
+
+
+
             </form>
 
         </div>

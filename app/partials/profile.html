@@ -1,28 +1,77 @@
-<div style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-top">
+<style>
+
+    .topcoat-list__header{
+
+        color:#ffffff;
+    }
+    .titelheader{
+
+        padding-left:30px;
+        margin-top:-45px;
+    }
+    .ulprofile li {
+        margin-top:20px;
+    }
+ #main{
+     margin-left: 5%;
+ }
+
+</style>
+
+<div id="sp-nav" data-ng-show="show" ng-swipe-left="$spMenu.toggle()" >
+    <div class="topcoat-list-container">
+        <h3 class="topcoat-list__header">Menu</h3>
+        <ul class="topcoat-list">
+            <li ng-click="goTaak()" class="topcoat-list__item"><span class="glyphicon glyphicon-home"></span>
+                Home
+            </li>
+            <li ng-click="goLogb()" class="topcoat-list__item"><span class="glyphicon glyphicon-pencil"></span>
+                Logbook
+            </li>
+            <li ng-click="goProfile()" class="topcoat-list__item"> <span class="glyphicon glyphicon-user"></span>
+                Profile
+
+            </li>
+            <li ng-click="logout()" class="topcoat-list__item"><span class="glyphicon glyphicon-off"></span>
+                Logout
+            </li>
+        </ul>
+    </div>
 
 
-    <div class="im">
+</div>
+<div id="sp-page">
+    <div id="topbutton" class="navbar navbar-app navbar-absolute-top">
+        <button class="hamburger" ng-click="$spMenu.toggle()"></button>
+
+
+
+        <div class="im">
         <img src="logow.png" />
     </div>
     <p class="titelheader" >Profiel</p>
 </div>
 
+    <div class="scrollable">
 
-<div id="main">
+
+
+        <div class="scrollable-content">
+<div id="main" ng-swipe-right="$spMenu.toggle()">
 
     <h2 class="h2">{{username}}</h2>
 
 
-    <div  ng-hide="edit" >
-        <button class="btn btn-primary"  ng-click="editUser()">Wijzig</button>
-        <ul>
+    <div  ng-hide="check" >
+
+        <ul class="ulprofile">
             <li>Voornaam: {{item.voornaam}}</li>
             <li>Naam: {{item.naam}}</li>
             <li>Email: {{item.email}}</li>
             <li>Geboortedatum: {{item.geboortedatum}}</li>
 
         </ul>
-
+        <button class="btn btn-primary"  ng-click="editUser()">Wijzig</button>
 
 
     </div>
@@ -31,12 +80,12 @@
 
 
 
-
-    <form ng-show="edit" class="form">
+<div ng-show="check" >
+    <form class="form">
 
             <div class="form-group">
                 <div class="input-group">
-                    <span class="input-group-addon">N</span>
+
 
                     <input class="form-control" size="18" type="text" ng-model="voornaam"  ng-minlength=2 ng-maxlength=20 placeholder={{item.voornaam}} required />
                 </div>
@@ -45,7 +94,7 @@
 
             <div class="form-group">
                 <div class="input-group">
-                    <span class="input-group-addon">AN</span>
+
                     <input class="form-control" size="18" type="text" ng-model="naam" ng-minlength=2 ng-maxlength=20 placeholder={{item.naam}} required />
                 </div>
             </div>
@@ -53,40 +102,43 @@
 
             <div class="form-group">
                 <div class="input-group">
-                    <span class="input-group-addon">@</span>
+
 
                     <input class="form-control" size="18" type="email" ng-model="email" placeholder={{item.email}} required />
                 </div>
             </div>
 
-            <div class="form-group">
-                <div class="input-group">
-                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
-                    <div class="input-group date" id="datetimepicker1">
-                        <input type="text" class="form-control" ng-model="geboortedatum" placeholder={{item.geboortedatum}} required />
+        <div class="form-group">
+            <div class="input-group">
+
+                <div class="input-group date" id="datetimepicker1">
+                    <input type="date" ng-model="geboortedatum" data-date-format="dd/mm/yyyy" class="form-control" placeholder="Geboortedatum" required />
 
 
 
-                    </div>
                 </div>
             </div>
-
+        </div>
 
 
 
         <button class="btn btn-primary"  ng-click="applyChanges()">Pas aan</button>
 
 
+
+
         <p ng-show="err" class="error">{{err}}</p>
     </form>
+</div>
 
+    <button class="btn btn-danger"  ng-click="resetQuestions()">Reset Questions</button>
 
-
+    </div>
+            </div>
+        </div>
 
 
 
 </div>
-<div  style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-bottom">
-    <button id="fixedbutton" ng-click="accept()" class="btn-primary">Accepteer ></button>
-    <button id="fixedleftbutton" ng-click="goBack()" class="btn-primary">< Terug </button>
-</div>
+
+

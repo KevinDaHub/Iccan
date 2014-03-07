@@ -8,20 +8,18 @@
 </div>
 
 
+<div class="scrollable">
+
+
+
+    <div class="scrollable-content">
 <div id="main">
 
     <h2 class="h2">End User License Agreement</h2>
 
     <article class="artikel">
 
-        Lorem Ipsum is slechts een proeftekst uit het drukkerij- en
-        zetterijwezen. Lorem Ipsum is de standaard proeftekst
-        in deze bedrijfstak sinds de 16e eeuw, toen een onbekende drukker een
-        zethaak met letters nam en ze door elkaar husselde om een font-catalogus te maken.
-        Het heeft niet alleen vijf eeuwen overleefd maar is ook, vrijwel onveranderd, overgenomen i
-        n elektronische letterzetting. Het is in de jaren '60 populair geworden met de introductie van
-        Letraset vellen met Lorem Ipsum passages en meer recentelijk door desktop publishing software zoals
-        Aldus PageMaker die versies van Lorem Ipsum bevatten.
+       {{item.tekst}}
 
     </article>
 
@@ -29,8 +27,10 @@
 
 
 
+    </div>
+        </div>
 
 </div>
 <div  style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-bottom">
-   <button id="fixedbutton" ng-click="accept()" class="btn-primary">Accept ></button>
+    <button id="fixedleftbutton" ng-click="decline()" class="btn-danger">< Decline</button><button id="fixedbutton" ng-click="accept()" class="btn-success">Accept ></button>
 </div>

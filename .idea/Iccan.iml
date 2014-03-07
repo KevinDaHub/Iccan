@@ -11,6 +11,8 @@
     <orderEntry type="library" name="angular-animate" level="application" />
     <orderEntry type="library" name="angular-sanitize" level="application" />
     <orderEntry type="library" name="d3.v2" level="application" />
+    <orderEntry type="library" name="angular-touch" level="application" />
+    <orderEntry type="library" name="sha256" level="application" />
   </component>
 </module>
 

@@ -1,3 +1,13 @@
+<style>
+
+    .vraag{
+        margin-left:2%;
+    }
+    .titelheader{
+
+    }
+</style>
+
 <div style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-top">
 
 
@@ -12,17 +22,20 @@
     <div class="vraag" >
     <p>{{item.naam}}</p>
 </div>
+
     <div class="antwoord" data-ng-show="check" >
-       <label>1<input type="radio" ng-model="answer" name="options" value="1"></label>
-        <label>2<input type="radio" ng-model="answer" name="options" value="2"></label>
-        <label>3<input type="radio" ng-model="answer" name="options" value="3"></label>
-        <label>4<input type="radio" ng-model="answer" name="options" value="4"></label>
+
+       <label class="topcoat-radio-button">1<input type="radio" ng-model="answer" name="options" value="1"><div class="topcoat-radio-button__checkmark"></div> </label>
+        <label class="topcoat-radio-button">2<input type="radio" ng-model="answer" name="options" value="2"><div class="topcoat-radio-button__checkmark"></div> </label>
+        <label class="topcoat-radio-button">3<input type="radio" ng-model="answer" name="options" value="3"><div class="topcoat-radio-button__checkmark"></div> </label>
+        <label class="topcoat-radio-button">4<input type="radio" ng-model="answer" name="options" value="4"><div class="topcoat-radio-button__checkmark"></div> </label>
     </div>
+
 
     <div class="antwoord" data-ng-hide="check">
 
-        <label>Ja<input type="radio" ng-model="answer" name="options" value="4"></label>
-        <label>Nee<input type="radio" ng-model="answer" name="options" value="1"></label>
+        <label class="topcoat-radio-button">Ja<input type="radio" ng-model="answer" name="options" value="1"><div class="topcoat-radio-button__checkmark"></div> </label>
+        <label class="topcoat-radio-button">Nee<input type="radio" ng-model="answer" name="options" value="4"><div class="topcoat-radio-button__checkmark"></div> </label>
 
     </div>
 </div>

@@ -3,11 +3,7 @@
 
 
 
-    #container{
-        height:800px;
-        margin-left:25%;
 
-    }
     body{
         background: rgb(51,109,147); /* Old browsers */
         background: -moz-radial-gradient(center, ellipse cover,  rgba(51,109,147,1) 0%, rgba(61,85,108,1) 53%); /* FF3.6+ */
@@ -19,9 +15,18 @@
         filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#336d93', endColorstr='#3d556c',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
 
     }
-    .checkbox{
-        color:white;
-    }
+   .psw{
+       color:white;
+
+   }
+   .psw:hover{
+       color:#b2c8ff;
+   }
+
+ .scrollable-content{
+
+     padding-left:25% ;
+ }
 </style>
 
 
@@ -29,8 +34,11 @@
 <div class="scrollable">
 
 
-<div id="container" >
+
 <div class="scrollable-content">
+
+
+
 
     <img class="logo" src="logoiccan2.png" />
     <form  role="form" class="form" >
@@ -94,14 +102,18 @@
             <div class="form-group">
                 <div class="input-group">
 
-        <input ng-model="geslacht" type="radio" value="m" >
 
-                   M
+                    <label class="topcoat-radio-button">
+                        M
+        <input ng-model="geslacht"  type="radio" value="m" >
+                <div class="topcoat-radio-button__checkmark"></div>
+                   </label>
 
-        <input ng-model="geslacht"  type="radio" value="v">
-
-                    V
-
+                    <label class="topcoat-radio-button">
+                        V
+                        <input ng-model="geslacht"  type="radio" value="v" >
+                        <div class="topcoat-radio-button__checkmark"></div>
+                    </label>
                 </div>
             </div>
 
@@ -109,7 +121,7 @@
                 <div class="input-group">
 
                     <div class="input-group date" id="datetimepicker1">
-                        <input type="date" data-date-format="dd/mm/yyyy" class="form-control" placeholder="Geboortedatum" required />
+                        <input type="date" ng-model="geboortedatum"  class="form-control" placeholder="Geboortedatum" required />
 
 
 
@@ -127,16 +139,17 @@
 
 
 
-        <div class="checkbox" data-ng-hide="createMode"><label><input type="checkbox">Remember me</label> <a  href="#/lostpsw">Wachtwoord vergeten</a></div>
-
+        <div> <a class="psw" href="#/lostpsw">Wachtwoord vergeten</a></div>
+        <div id="buttonss">
         <button  class="btn btn-primary" ng-click="login()" ng-hide="createMode">Login</button>
+
         <button  class="btn btn-default" ng-click="createMode = true" ng-hide="createMode">Inschrijven</button>
         <button class="btn btn-primary" ng-cloak ng-show="createMode" ng-click="createAccount()">Klaar</button>
         <button class="btn btn-danger" ng-cloak ng-show="createMode" ng-click="createMode = false">Cancel</button>
-
+</div>
         <p ng-show="err" class="error">{{err}}</p>
     </form>
 
         </div>
-    </div>
+
 </div>

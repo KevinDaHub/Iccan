@@ -1,4 +1,46 @@
-<div style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-top" >
+<style>
+
+    .titelheader{
+
+        padding-left:30px;
+        margin-top:-45px;
+    }
+    .scrollable-content{
+
+        height:1200px;
+    }
+
+    .topcoat-list__header{
+
+        color:#ffffff;
+    }
+</style>
+
+<div id="sp-nav" data-ng-show="show" ng-swipe-left="$spMenu.toggle()" >
+    <div class="topcoat-list-container">
+        <h3 class="topcoat-list__header">Menu</h3>
+        <ul class="topcoat-list">
+            <li ng-click="goTaak()" class="topcoat-list__item"><span class="glyphicon glyphicon-home"></span>
+                Home
+            </li>
+            <li ng-click="goLogb()" class="topcoat-list__item"><span class="glyphicon glyphicon-pencil"></span>
+                Logbook
+            </li>
+            <li ng-click="goProfile()" class="topcoat-list__item"> <span class="glyphicon glyphicon-user"></span>
+                Profile
+
+            </li>
+            <li ng-click="logout()" class="topcoat-list__item"><span class="glyphicon glyphicon-off"></span>
+                Logout
+            </li>
+        </ul>
+    </div>
+
+
+</div>
+<div id="sp-page">
+    <div id="topbutton" class="navbar navbar-app navbar-absolute-top">
+        <button class="hamburger" ng-click="$spMenu.toggle()"></button>
 
 
     <div class="im">
@@ -6,61 +48,59 @@
     </div>
     <p class="titelheader" >Logboek</p>
 
-    <button id="fixedtopbutton" ng-click="toProfile()" class="btn-success">Profiel ></button>
 
 </div>
-        <!--
-
-<a toggle="on" target="myOverlay"  class="btn-success" href>Toggle</a>
-
-<div overlay="myOverlay">
-    <h4 class="overlay-title">My Overlay</h4>
-    <p>
-    <div class="sidebar sidebar-left" toggleable active-class="in" id="mainSidebar">
-
-        <h1 class="app-name">Menu</h1>
-
-        <div class="scrollable">
-            <div class="scrollable-content">
-                <div class="list-group" toggle="off" bubble target="mainSidebar">
-                    <a class="list-group-item" href="#/">Profile <i class="fa fa-chevron-right pull-right"></i></a>
-                    <a class="list-group-item" href="#/logboek">Logboek <i class="fa fa-chevron-right pull-right"></i></a>
-
-                </div>
-
-            </div>
-        </div>
-
-    </div> Earum odit facilis qui.
-    </p>
-    <p toggle="off" bubble target="myOverlay">
-        <span class="btn btn-primary">Ok</span>
-        <span class="btn btn-default">Cancel</span>
-    </p>
-</div>
--->
-        <div id="main">
+    <div class="scrollable">
 
 
-<div class="vraag" >
+
+        <div class="scrollable-content">
+
+
+        <div id="main" ng-swipe-right="$spMenu.toggle()">
+
+
+<div class="vraaglog" >
     <p>{{item.naam}}</p>
 </div>
-<div class="antwoord" data-ng-show="check" >
+<div class="antwoordlog" data-ng-show="check" >
     <div>
-        <input ng-model="value"  type="range" id="mySlider1" slider options="options" />
-        {{value}}
+        <input ng-model="answer" class="topcoat-range"  min="1" max="10"  type="range" />
+        {{answer}}
+
     </div>
 </div>
 
 <div class="antwoord" data-ng-hide="check">
+    <textarea  ng-model="answer" rows="4" cols="36" placeholder="Comment..." class="topcoat-textarea"></textarea>
 
-    <label>Ja<input type="radio" ng-model="answer" name="options" value="4"></label>
-    <label>Nee<input type="radio" ng-model="answer" name="options" value="1"></label>
 
 </div>
 
         <div class="onderkant">
-            <button  ng-click="getHistory()" class="btn-success">Geschiedenis...</button>
+            <button  id="histor" ng-click="getHistory()" class="btn-success">Geschiedenis...</button>
+
+
+            <div class="panel-group" id="accordion">
+                <div class="panel panel-default" ng-repeat="vraag in vvragen">
+                    <div class="panel-heading"  toggle target={{vraag.id}} ng-click="nextOne(item.bestand,item.type,item.omschrijving)">
+                        <h4 class="panel-title">
+                            <a href="#/" toggle target={{vraag.id}} ng-click="nextOne(item.bestand,item.type,item.omschrijving)">
+
+                                {{vraag.datum}}
+                            </a>
+                        </h4>
+                    </div>
+                    <div id={{item.taakid}} toggleable active-class="in" exclusion-group="accordion1"  class="panel-collapse collapse">
+                        <div class="panel-body">
+
+                            {{vraag.naam}} : {{vraag.antwoord}}
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
             <div id="history" ng-repeat="vraag in vvragen">
 
                 <p>{{vraag.naam}} : {{vraag.antwoord}}</p>
@@ -75,8 +115,11 @@
         </div>
 
             </div>
+        </div>
+    </div>
 <div  style="background-color: #3d556c;" class="navbar navbar-app navbar-absolute-bottom">
     <button id="fixedbutton" ng-click="nextLogQuestion()" class="btn-success">Antwoord ></button>
-    <button id="fixedleftbutton" ng-click="goBack()" class="btn-success">< Terug</button>
- <!--   <button id="fixedmidbutton" ng-click="goStatik()" class="btn-success">< Statistieken ></button>-->
+
 </div>
+
+    </div>

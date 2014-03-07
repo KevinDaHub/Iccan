@@ -3,36 +3,10 @@
 var username = "anonymous";
 
 
-$(document).ready(
-
-    function() {
-
-        $("html").niceScroll();
-        $("#containr").niceScroll({cursorcolor:"#00F"});
-    }
-
-);
 
 
+var iccan = angular.module('iccan',[ 'ngRoute','mobile-angular-ui','ngTouch','shoppinpal.mobile-menu','ui.bootstrap']);
 
-var iccan = angular.module('iccan',[ 'ngRoute','mobile-angular-ui','ngSanitize',"highcharts-ng"]);
-
-
-iccan.directive('calendar', function () {
-    return {
-        require: 'ngModel',
-        link: function (scope, el, attr, ngModel) {
-            $(el).datepicker({
-                dateFormat: 'yy-mm-dd',
-                onSelect: function (dateText) {
-                    scope.$apply(function () {
-                        ngModel.$setViewValue(dateText);
-                    });
-                }
-            });
-        }
-    };
-});
 
 
 iccan.directive('youtube', function($sce) {
@@ -52,221 +26,59 @@ iccan.directive('youtube', function($sce) {
     };
 });
 
-iccan.directive('ghVisualization', function () {
-
-    // constants
-    var margin = 20,
-        width = 960,
-        height = 500 - .5 - margin,
-        color = d3.interpolateRgb("#f77", "#77f");
-
-    return {
-        restrict: 'E',
-        scope: {
-            val: '=',
-            grouped: '='
-        },
-        link: function (scope, element, attrs) {
-
-            // set up initial svg object
-            var vis = d3.select(element[0])
-                .append("svg")
-                .attr("width", width)
-                .attr("height", height + margin + 100);
-
-            scope.$watch('val', function (newVal, oldVal) {
-
-                // clear the elements inside of the directive
-                vis.selectAll('*').remove();
-
-                // if 'val' is undefined, exit
-                if (!newVal) {
-                    return;
-                }
-
-                // Based on: http://mbostock.github.com/d3/ex/stack.html
-                var n = newVal.length, // number of layers
-                    m = newVal[0].length, // number of samples per layer
-                    data = d3.layout.stack()(newVal);
-
-                var mx = m,
-                    my = d3.max(data, function(d) {
-                        return d3.max(d, function(d) {
-                            return d.y0 + d.y;
-                        });
-                    }),
-                    mz = d3.max(data, function(d) {
-                        return d3.max(d, function(d) {
-                            return d.y;
-                        });
-                    }),
-                    x = function(d) { return d.x * width / mx; },
-                    y0 = function(d) { return height - d.y0 * height / my; },
-                    y1 = function(d) { return height - (d.y + d.y0) * height / my; },
-                    y2 = function(d) { return d.y * height / mz; }; // or `my` not rescale
-
-                // Layers for each color
-                // =====================
-
-                var layers = vis.selectAll("g.layer")
-                    .data(data)
-                    .enter().append("g")
-                    .style("fill", function(d, i) {
-                        return color(i / (n - 1));
-                    })
-                    .attr("class", "layer");
-
-                // Bars
-                // ====
-
-                var bars = layers.selectAll("g.bar")
-                    .data(function(d) { return d; })
-                    .enter().append("g")
-                    .attr("class", "bar")
-                    .attr("transform", function(d) {
-                        return "translate(" + x(d) + ",0)";
-                    });
-
-                bars.append("rect")
-                    .attr("width", x({x: .9}))
-                    .attr("x", 0)
-                    .attr("y", height)
-                    .attr("height", 0)
-                    .transition()
-                    .delay(function(d, i) { return i * 10; })
-                    .attr("y", y1)
-                    .attr("height", function(d) {
-                        return y0(d) - y1(d);
-                    });
-
-                // X-axis labels
-                // =============
-
-                var labels = vis.selectAll("text.label")
-                    .data(data[0])
-                    .enter().append("text")
-                    .attr("class", "label")
-                    .attr("x", x)
-                    .attr("y", height + 6)
-                    .attr("dx", x({x: .45}))
-                    .attr("dy", ".71em")
-                    .attr("text-anchor", "middle")
-                    .text(function(d, i) {
-                        return d.date;
-                    });
-
-                // Chart Key
-                // =========
-
-                var keyText = vis.selectAll("text.key")
-                    .data(data)
-                    .enter().append("text")
-                    .attr("class", "key")
-                    .attr("y", function (d, i) {
-                        return height + 42 + 30*(i%3);
-                    })
-                    .attr("x", function (d, i) {
-                        return 155 * Math.floor(i/3) + 15;
-                    })
-                    .attr("dx", x({x: .45}))
-                    .attr("dy", ".71em")
-                    .attr("text-anchor", "left")
-                    .text(function(d, i) {
-                        return d[0].user;
-                    });
-
-                var keySwatches = vis.selectAll("rect.swatch")
-                    .data(data)
-                    .enter().append("rect")
-                    .attr("class", "swatch")
-                    .attr("width", 20)
-                    .attr("height", 20)
-                    .style("fill", function(d, i) {
-                        return color(i / (n - 1));
-                    })
-                    .attr("y", function (d, i) {
-                        return height + 36 + 30*(i%3);
-                    })
-                    .attr("x", function (d, i) {
-                        return 155 * Math.floor(i/3);
-                    });
-
-
-                // Animate between grouped and stacked
-                // ===================================
-
-                function transitionGroup() {
-                    vis.selectAll("g.layer rect")
-                        .transition()
-                        .duration(500)
-                        .delay(function(d, i) { return (i % m) * 10; })
-                        .attr("x", function(d, i) { return x({x: .9 * ~~(i / m) / n}); })
-                        .attr("width", x({x: .9 / n}))
-                        .each("end", transitionEnd);
-
-                    function transitionEnd() {
-                        d3.select(this)
-                            .transition()
-                            .duration(500)
-                            .attr("y", function(d) { return height - y2(d); })
-                            .attr("height", y2);
-                    }
-                }
-
-                function transitionStack() {
-                    vis.selectAll("g.layer rect")
-                        .transition()
-                        .duration(500)
-                        .delay(function(d, i) { return (i % m) * 10; })
-                        .attr("y", y1)
-                        .attr("height", function(d) {
-                            return y0(d) - y1(d);
-                        })
-                        .each("end", transitionEnd);
-
-                    function transitionEnd() {
-                        d3.select(this)
-                            .transition()
-                            .duration(500)
-                            .attr("x", 0)
-                            .attr("width", x({x: .9}));
-                    }
-                }
-
-                // reset grouped state to false
-                scope.grouped = false;
-
-                // setup a watch on 'grouped' to switch between views
-                scope.$watch('grouped', function (newVal, oldVal) {
-                    // ignore first call which happens before we even have data from the Github API
-                    if (newVal === oldVal) {
-                        return;
-                    }
-                    if (newVal) {
-                        transitionGroup();
-                    } else {
-                        transitionStack();
+iccan.directive('mySlideController', ['$swipe',
+    function($swipe) {
+        return {
+            restrict: 'EA',
+            link: function(scope, ele, attrs, ctrl) {
+                var startX, pointX;
+                $swipe.bind(ele, {
+                    'start': function(coords) {
+                        startX = coords.x;
+                        pointX = coords.y;
+                    },
+                    'move': function(coords) {
+                        var delta = coords.x - pointX;
+// ...
+                    },
+                    'end': function(coords) {
+// ...
+                    },
+                    'cancel': function(coords) {
+// ...
                     }
                 });
-            });
+            }
         }
-    }
-});
+    }]);
 
-iccan.run(function($window, $rootScope) {
-    $rootScope.online = navigator.onLine;
-    $window.addEventListener("offline", function () {
-        $rootScope.$apply(function() {
-            $rootScope.online = false;
-        });
-    }, false);
-    $window.addEventListener("online", function () {
-        $rootScope.$apply(function() {
-            $rootScope.online = true;
-        });
-    }, false);
-});
+iccan.run(['$rootScope','$spMenu',function($rootScope,$spMenu) {
+    $rootScope.$spMenu=$spMenu;
 
+}]);
+
+iccan.provider("$spMenu", function(){
+    this.$get = [function(){
+        var menu = {};
+
+        menu.show = function show(){
+            var menu = angular.element(document.querySelector('#sp-nav'));
+            console.log(menu);
+            menu.addClass('show');
+        };
+
+        menu.hide = function hide(){
+            var menu = angular.element(document.querySelector('#sp-nav'));
+            menu.removeClass('show');
+        };
+
+        menu.toggle = function toggle() {
+            var menu = angular.element(document.querySelector('#sp-nav'));
+            menu.toggleClass('show');
+        };
+
+        return menu;
+    }]});
 
 iccan.config(['$routeProvider',function($routeProvider){
     $routeProvider.when('/login',{
@@ -325,72 +137,45 @@ iccan.config(['$httpProvider', function($httpProvider){
 
 
 
-
-iccan.controller('StatisticCtrl',['$scope','$http','$location',function($scope,$http,$location){
-
-    $scope.addPoints = function () {
-        var seriesArray = $scope.chartConfig.series;
-        var rndIdx = Math.floor(Math.random() * seriesArray.length);
-        seriesArray[rndIdx].data = seriesArray[rndIdx].data.concat([1, 10, 20])
-    };
-
-    $scope.addSeries = function () {
-        var rnd = []
-        for (var i = 0; i < 10; i++) {
-            rnd.push(Math.floor(Math.random() * 20) + 1)
-        }
-        $scope.chartConfig.series.push({
-            data: rnd
-        })
-    }
-
-    $scope.removeRandomSeries = function () {
-        var seriesArray = $scope.chartConfig.series;
-        var rndIdx = Math.floor(Math.random() * seriesArray.length);
-        seriesArray.splice(rndIdx, 1)
-    }
-
-    $scope.swapChartType = function () {
-        if (this.chartConfig.options.chart.type === 'line') {
-            this.chartConfig.options.chart.type = 'bar'
-        } else {
-            this.chartConfig.options.chart.type = 'line';
-            this.chartConfig.options.chart.zoomType = 'x'
-        }
-    }
-
-    $scope.toggleLoading = function () {
-        this.chartConfig.loading = !this.chartConfig.loading
-    }
-
-    $scope.chartConfig = {
-        options: {
-            chart: {
-                type: 'bar'
-            }
-        },
-        series: [{
-            data: [10, 15, 12, 8, 7]
-        }],
-        title: {
-            text: 'Hello'
-        },
-
-        loading: false
-    }
-
-
-}]);
-
 iccan.controller('PasswordCtrl',['$scope','$location','$http',function($scope,$location,$http){
-
 
 
 
 
     $scope.sendPassword = function(){
 
-        $scope.succ ="Mail gestuurd!"
+
+        var url = "http://iccan.be/scripts/requestpasschange.php";
+        var FormData={
+            'username':$scope.user,
+            'email': $scope.email
+
+        };
+
+
+
+        $http({
+            method:'POST',
+            url:url,
+            data:FormData,
+            headers:{'Content-Type': 'application/x-www-form-urlencoded'}
+
+
+        })
+
+            .success(function(data,status){
+                $scope.status = status;
+                alert("Email has been successfully send!")
+
+            })
+            .error(function(data,status){
+
+
+                $scope.status=status;
+                alert("Invalid username/email");
+
+
+            });
 
     }
 
@@ -412,7 +197,7 @@ iccan.controller('LoginCtrl', ['$scope','$location','$http', function($scope,$lo
 
 
 
-    $scope.titel="Login";
+
 
     $scope.lostpsw = function(){
 
@@ -426,15 +211,34 @@ $scope.register = function(){
 
 
 };
+
+
     $scope.createAccount = function(){
-        var url = "http://iccan.be/scripts/registreer.php";
+
+if($scope.pass==$scope.confirm){
+
+
+        var pswh=  CryptoJS.SHA256($scope.pass);
+
+
+        $scope.saltpsw = pswh + "ditzefoiqzeisEHOEUIHF54685çé!";
+
+
+
+            var mydate = new Date($scope.geboortedatum);
+
+        var date = mydate.getDay() + "/"+mydate.getMonth() + "/" + mydate.getFullYear();
+
+
+
+       var url = "http://iccan.be/scripts/registreer.php";
         var FormData={
             'username':$scope.user,
-            'password':$scope.pass,
+            'password':$scope.saltpsw,
             'name':$scope.naam,
             'surname':$scope.achternaam,
             'sex':$scope.geslacht,
-            'birthdate':$scope.geboortedatum,
+            'birthdate':date,
             'email':$scope.email
 
         };
@@ -458,7 +262,8 @@ $scope.register = function(){
 
 
                 $scope.status = status;
-                alert($scope.content.succes);
+
+
 
 
                 if($scope.content.succes == 1 ){
@@ -485,7 +290,9 @@ $scope.register = function(){
 
 
             })
-
+}else{
+    alert("passwords do not match");
+}
 
 
 
@@ -494,13 +301,18 @@ $scope.register = function(){
 
     $scope.login=function(){
 
+        var pswh=  CryptoJS.SHA256($scope.pass);
+
+
+        $scope.saltpsw = pswh + "ditzefoiqzeisEHOEUIHF54685çé!";
+
 
         username = $scope.user;
 
         var url = "http://iccan.be/scripts/login.php";
         var FormData={
             'username':$scope.user,
-            'password':$scope.pass
+            'password':$scope.saltpsw
         };
 
 
@@ -555,7 +367,28 @@ $scope.register = function(){
 
 }]);
 
-iccan.controller('LicenseCtrl',['$scope','$location',function($scope,$location){
+iccan.controller('LicenseCtrl',['$scope','$location','$http',function($scope,$location,$http){
+
+    var url = "http://iccan.be/scripts/policy.php";
+    $http.get(url)
+        .success(function(data,status){
+
+            $scope.items = data.policy;
+            $scope.status = status;
+            $scope.item = $scope.items[0];
+         })
+        .error(function(response,status){
+
+            $scope.content = response;
+            $scope.status=status;
+            alert(status);
+            alert($scope.content);
+
+        });
+
+    $scope.decline=function(){
+        $location.path('/login')
+    }
 
     $scope.accept=function(){
 
@@ -566,22 +399,35 @@ iccan.controller('LicenseCtrl',['$scope','$location',function($scope,$location){
 
 iccan.controller('ProfileCtrl',['$scope','$http','$location',function($scope,$http,$location){
 
-    $scope.edit = false;
+   $scope.check = false;
 
     $scope.username = username;
 
+    $scope.goTaak =function(){
+        $location.path('/taakbeheer');
+    };
 
+    $scope.goLogb =function(){
+        $location.path('/logboek');
+    };
+    $scope.logout =function(){
+        $location.path('/login');
+    };  $scope.goProfile = function(){
 
-    $scope.goBack = function(){
-
-        $location.path("/logboek");
+        $location.path('/profiel');
     }
 
     $scope.editUser = function(){
 
-        $scope.edit = true;
+        $scope.check = true;
 
-    }
+    };
+
+    $scope.resetQuestions=function(){
+
+
+        $location.path('/vraagbeheer');
+    };
 
     $scope.applyChanges=function(){
         var url = "http://iccan.be/scripts/edituser.php";
@@ -602,13 +448,16 @@ iccan.controller('ProfileCtrl',['$scope','$http','$location',function($scope,$ht
         }else{
             $scope.item.email = $scope.email;
         }
+        var mydate = new Date($scope.geboortedatum);
+
+        var date = mydate.getDay() + "/"+mydate.getMonth() + "/" + mydate.getFullYear();
 
         var FormData={
             'username':username,
             'name':$scope.voornaam,
             'surname':$scope.naam,
             'sex':$scope.item.geslacht,
-            'birthdate':"25/07/1992",
+            'birthdate':date,
             'email':$scope.email
 
         };
@@ -632,13 +481,12 @@ iccan.controller('ProfileCtrl',['$scope','$http','$location',function($scope,$ht
 
 
                 $scope.status = status;
-                alert($scope.content.succes);
+
 
 
                 if($scope.content.succes == 1 ){
 
-                    username = $scope.user;
-                    $scope.edit =false;
+                    $scope.check =false;
 
 
 
@@ -720,19 +568,97 @@ iccan.controller('ProfileCtrl',['$scope','$http','$location',function($scope,$ht
 
 }]);
 
-
 iccan.controller('TaakCtrl',['$scope','$http','$location',function($scope,$http,$location){
 
 
     $scope.user = username;
 
+    $scope.max=10;
+    $scope.value=7;
+    $scope.isReadonly = false;
 
+    $scope.hoveringOver = function(value) {
+        $scope.overStar = value;
+        $scope.percent = 100 * (value / $scope.max);
+    };
+
+    $scope.ratingStates = [
+        {stateOn: 'glyphicon-ok-sign', stateOff: 'glyphicon-ok-circle'},
+        {stateOn: 'glyphicon-star', stateOff: 'glyphicon-star-empty'},
+        {stateOn: 'glyphicon-heart', stateOff: 'glyphicon-ban-circle'},
+        {stateOn: 'glyphicon-heart'},
+        {stateOff: 'glyphicon-off'}
+    ];
+
+
+    $scope.taskComplete=function(){
+        $scope.survey=true;
+
+    }
+    $scope.enterSurvey=function(taakid,score,answer){
+
+
+
+        var url = "http://iccan.be/scripts/comptaak.php";
+        var FormData={
+            'username':$scope.user,
+            'taakid':taakid,
+            'score':$scope.scor,
+            'verslag':$scope.answer
+
+        };
+        $http({
+            method:'POST',
+            url:url,
+            data:FormData,
+            headers:{'Content-Type': 'application/x-www-form-urlencoded'}
+
+
+        })
+
+            .success(function(data,status){
+                $scope.status = status;
+            })
+            .error(function(data,status){
+                $scope.status=status;
+                alert(status);
+            });
+
+        $scope.survey=false;
+    }
+
+
+    $scope.showmenu = false;
+    $scope.toggleMenu=function(){
+        $scope.showmenu=($scope.showmenu) ? false:true;
+    };
+
+    $scope.goTaak =function(){
+        $location.path('/taakbeheer');
+    };
+
+    $scope.goLogb =function(){
+        $location.path('/logboek');
+    };
+    $scope.logout =function(){
+        $location.path('/login');
+    };  $scope.goProfile = function(){
+
+        $location.path('/profiel');
+    }
+
+$scope.showSurvey = function(){
+
+
+
+}
 
     var url = "http://iccan.be/scripts/taken.php";
     var FormData={
         'username':$scope.user
 
     };
+
 
 
 
@@ -781,18 +707,21 @@ iccan.controller('TaakCtrl',['$scope','$http','$location',function($scope,$http,
 
 
 
-$scope.nextFile = function(url,type){
-
+$scope.nextFile = function(url,type,omschrijving){
 
 
 
 if(type=="youtube"){
     $scope.image="";
     $scope.imageshow =false;
+    $scope.Popover = omschrijving;
+    $scope.PopoverTitle = "Omschrijving";
     $scope.code = "https://www.youtube.com/v/watch?v="+url+"&html5=True";
 
 }else{
 
+    $scope.Popover = omschrijving;
+    $scope.PopoverTitle = "Omschrijving";
     $scope.imageshow=true;
     $scope.stringer = url.split("-");
 
@@ -803,7 +732,7 @@ if(type=="youtube"){
     $scope.code = $scope.site;
 }
 
-}
+};
 
 
 
@@ -835,6 +764,21 @@ iccan.controller('LogbCtrl',['$scope','$http','$location',function($scope,$http,
         step: 1,
         dimension: " happy"
     };
+
+    $scope.goTaak =function(){
+        $location.path('/taakbeheer');
+    };
+
+    $scope.goLogb =function(){
+        $location.path('/logboek');
+    };
+    $scope.logout =function(){
+        $location.path('/login');
+    };  $scope.goProfile = function(){
+
+        $location.path('/profiel');
+    };
+
 
     var i = 1;
     var url = "http://iccan.be/scripts/logboek.php";
@@ -946,7 +890,15 @@ iccan.controller('LogbCtrl',['$scope','$http','$location',function($scope,$http,
                 $scope.item= $scope.items[i];
                 i++;
 
-            }
+            }else{
+         $scope.answers.push({'id':$scope.item.id, 'antwoord':$scope.answer});
+         $scope.item= $scope.items[i];
+         i++;
+
+         $scope.check = false;
+
+
+     }
 
 
 
@@ -1086,11 +1038,6 @@ $scope.answers =[];
 
         });
 
-   /*var check =true;
-    var check2=false;
-
-    $scope.vraag = VraagService.get(1);
-*/
     $scope.nextQuestion=function(){
 
 
