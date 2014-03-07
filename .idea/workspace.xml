@@ -28,7 +28,7 @@
             <file leaf-file-name="app.js" pinned="false" current="true" current-in-tab="true">
               <entry file="file://$PROJECT_DIR$/app/js/app.js">
                 <provider selected="true" editor-type-id="text-editor">
-                  <state line="721" column="6" selection-start="14157" selection-end="14157" vertical-scroll-proportion="0.2698238" vertical-offset="2866" max-vertical-offset="3774">
+                  <state line="173" column="52" selection-start="4615" selection-end="4615" vertical-scroll-proportion="0.6552864" vertical-offset="408" max-vertical-offset="10183">
                     <folding>
                       <element signature="e#212#762#0" expanded="false" />
                       <element signature="e#803#1500#0" expanded="false" />
@@ -36,17 +36,15 @@
                       <element signature="e#1644#2246#0" expanded="false" />
                       <element signature="e#2263#3396#0" expanded="false" />
                       <element signature="e#3413#3764#0" expanded="false" />
-                      <element signature="e#3802#4585#0" expanded="false" />
-                      <element signature="e#4618#7773#0" expanded="false" />
-                      <element signature="e#4996#5041#0" expanded="false" />
-                      <element signature="e#5072#5109#0" expanded="false" />
-                      <element signature="e#5184#6593#0" expanded="false" />
-                      <element signature="e#7808#8459#0" expanded="false" />
-                      <element signature="e#8494#11324#0" expanded="false" />
-                      <element signature="e#14631#18339#0" expanded="false" />
-                      <element signature="e#18372#24355#0" expanded="false" />
-                      <marker date="1394172253365" expanded="true" signature="334:347" placeholder="..." />
-                      <marker date="1394172253365" expanded="true" signature="365:403" placeholder="..." />
+                      <element signature="e#4844#7999#0" expanded="false" />
+                      <element signature="e#5222#5267#0" expanded="false" />
+                      <element signature="e#5298#5335#0" expanded="false" />
+                      <element signature="e#5410#6819#0" expanded="false" />
+                      <element signature="e#8034#8685#0" expanded="false" />
+                      <element signature="e#8720#11550#0" expanded="false" />
+                      <element signature="e#14857#18565#0" expanded="false" />
+                      <marker date="1394172832101" expanded="true" signature="334:347" placeholder="..." />
+                      <marker date="1394172832101" expanded="true" signature="365:403" placeholder="..." />
                     </folding>
                   </state>
                 </provider>
@@ -75,7 +73,7 @@
       <file leaf-file-name="taakbeheer.html" pinned="false" current="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/partials/taakbeheer.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="39" column="20" selection-start="598" selection-end="598" vertical-scroll-proportion="0.7042578" vertical-offset="51" max-vertical-offset="2754">
+            <state line="14" column="31" selection-start="201" selection-end="201" vertical-scroll-proportion="0.2080089" vertical-offset="51" max-vertical-offset="2754">
               <folding />
             </state>
           </provider>
@@ -178,8 +176,8 @@
         <option value="$PROJECT_DIR$/app/partials/profile.html" />
         <option value="$PROJECT_DIR$/app/partials/vraagbeheer.html" />
         <option value="$PROJECT_DIR$/app/partials/login.html" />
-        <option value="$PROJECT_DIR$/app/js/app.js" />
         <option value="$PROJECT_DIR$/app/partials/taakbeheer.html" />
+        <option value="$PROJECT_DIR$/app/js/app.js" />
       </list>
     </option>
   </component>
@@ -187,7 +185,7 @@
     <option name="x" value="-8" />
     <option name="y" value="-8" />
     <option name="width" value="1936" />
-    <option name="height" value="1066" />
+    <option name="height" value="1096" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -408,14 +406,14 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-8" y="-8" width="1936" height="1066" extended-state="6" />
+    <frame x="-8" y="-8" width="1936" height="1096" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.25" sideWeight="0.6702356" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.25" sideWeight="0.6702356" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.4" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32976446" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
@@ -544,14 +542,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app/partials/taakbeheer.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="39" column="20" selection-start="598" selection-end="598" vertical-scroll-proportion="0.7042578" vertical-offset="51" max-vertical-offset="2754">
+        <state line="14" column="31" selection-start="201" selection-end="201" vertical-scroll-proportion="0.2080089" vertical-offset="51" max-vertical-offset="2754">
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/js/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="721" column="6" selection-start="14157" selection-end="14157" vertical-scroll-proportion="0.2698238" vertical-offset="2866" max-vertical-offset="3774">
+        <state line="173" column="52" selection-start="4615" selection-end="4615" vertical-scroll-proportion="0.6552864" vertical-offset="408" max-vertical-offset="10183">
           <folding>
             <element signature="e#212#762#0" expanded="false" />
             <element signature="e#803#1500#0" expanded="false" />
@@ -559,17 +557,15 @@
             <element signature="e#1644#2246#0" expanded="false" />
             <element signature="e#2263#3396#0" expanded="false" />
             <element signature="e#3413#3764#0" expanded="false" />
-            <element signature="e#3802#4585#0" expanded="false" />
-            <element signature="e#4618#7773#0" expanded="false" />
-            <element signature="e#4996#5041#0" expanded="false" />
-            <element signature="e#5072#5109#0" expanded="false" />
-            <element signature="e#5184#6593#0" expanded="false" />
-            <element signature="e#7808#8459#0" expanded="false" />
-            <element signature="e#8494#11324#0" expanded="false" />
-            <element signature="e#14631#18339#0" expanded="false" />
-            <element signature="e#18372#24355#0" expanded="false" />
-            <marker date="1394172253365" expanded="true" signature="334:347" placeholder="..." />
-            <marker date="1394172253365" expanded="true" signature="365:403" placeholder="..." />
+            <element signature="e#4844#7999#0" expanded="false" />
+            <element signature="e#5222#5267#0" expanded="false" />
+            <element signature="e#5298#5335#0" expanded="false" />
+            <element signature="e#5410#6819#0" expanded="false" />
+            <element signature="e#8034#8685#0" expanded="false" />
+            <element signature="e#8720#11550#0" expanded="false" />
+            <element signature="e#14857#18565#0" expanded="false" />
+            <marker date="1394172832101" expanded="true" signature="334:347" placeholder="..." />
+            <marker date="1394172832101" expanded="true" signature="365:403" placeholder="..." />
           </folding>
         </state>
       </provider>

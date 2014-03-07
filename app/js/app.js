@@ -165,8 +165,14 @@ iccan.controller('PasswordCtrl',['$scope','$location','$http',function($scope,$l
 
             .success(function(data,status){
                 $scope.status = status;
-                alert("Email has been successfully send!")
+                $scope.msgs = data.berichten;
 
+                $scope.msg =$scope.msgs[0];
+                if($scope.msg.succes==1){
+                alert("Email has been successfully send!")
+                }else{
+                    alert("Invalid username/email");
+                }
             })
             .error(function(data,status){
 
