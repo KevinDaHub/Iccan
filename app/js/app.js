@@ -717,7 +717,7 @@ if(type=="youtube"){
     $scope.link=true;
     $scope.Popover = omschrijving;
     $scope.PopoverTitle = "Omschrijving";
-    $scope.youtbe = "https://www.youtube.com/watch?v="+url+"&html5=True";
+    $scope.youtbe = "https://www.youtube.com/watch?v="+url;
 
 }else{
 
