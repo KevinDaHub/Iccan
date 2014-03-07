@@ -714,14 +714,16 @@ $scope.nextFile = function(url,type,omschrijving){
 if(type=="youtube"){
     $scope.image="";
     $scope.imageshow =false;
+    $scope.link=true;
     $scope.Popover = omschrijving;
     $scope.PopoverTitle = "Omschrijving";
-    $scope.code = "https://www.youtube.com/v/watch?v="+url+"&html5=True";
+    $scope.youtbe = "https://www.youtube.com/v/watch?v="+url+"&html5=True";
 
 }else{
 
     $scope.Popover = omschrijving;
     $scope.PopoverTitle = "Omschrijving";
+    $scope.link=false;
     $scope.imageshow=true;
     $scope.stringer = url.split("-");
 

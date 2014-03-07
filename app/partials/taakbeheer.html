@@ -35,6 +35,10 @@
     .logoimg{
         margin-left: 2px;
     }
+    #ytb{
+
+        margin-top: -100px;;
+    }
 
 </style>
 
@@ -115,12 +119,16 @@
 
                             <div data-ng-hide="survey">
                             <button id="buttonpop" popover="{{Popover}}" popover-title="{{PopoverTitle}}" class="btn btn-default">?</button>
+
+
+
                             <div data-ng-show="imageshow">
                                 <img src={{image}} height="150px" width="150px">
+                                <div youtube code="code" ></div>
                             </div>
 
+                             <div id="ytb" ng-show="link"><a href={{youtbe}}>Youtube</a></div>
 
-                            <div youtube code="code" ></div>
 
 
                             <button class="buttoncomp"  ng-click="taskComplete()" class="btn btn-default">Task Complete!</button>

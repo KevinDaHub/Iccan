@@ -20,6 +20,43 @@
   <component name="DaemonCodeAnalyzer">
     <disable_hints />
   </component>
+  <component name="DockManager">
+    <window id="4">
+      <content type="file-editors">
+        <state>
+          <leaf>
+            <file leaf-file-name="app.js" pinned="false" current="false" current-in-tab="true">
+              <entry file="file://$PROJECT_DIR$/app/js/app.js">
+                <provider selected="true" editor-type-id="text-editor">
+                  <state line="717" column="34" selection-start="14047" selection-end="14047" vertical-scroll-proportion="0.48237884" vertical-offset="2605" max-vertical-offset="3774">
+                    <folding>
+                      <element signature="e#212#762#0" expanded="false" />
+                      <element signature="e#803#1500#0" expanded="false" />
+                      <element signature="e#1514#1604#0" expanded="false" />
+                      <element signature="e#1644#2246#0" expanded="false" />
+                      <element signature="e#2263#3396#0" expanded="false" />
+                      <element signature="e#3413#3764#0" expanded="false" />
+                      <element signature="e#3802#4585#0" expanded="false" />
+                      <element signature="e#4618#7773#0" expanded="false" />
+                      <element signature="e#4996#5041#0" expanded="false" />
+                      <element signature="e#5072#5109#0" expanded="false" />
+                      <element signature="e#5184#6593#0" expanded="false" />
+                      <element signature="e#7808#8459#0" expanded="false" />
+                      <element signature="e#8494#11324#0" expanded="false" />
+                      <element signature="e#14647#18355#0" expanded="false" />
+                      <element signature="e#18388#24371#0" expanded="false" />
+                      <marker date="1394170705856" expanded="true" signature="334:347" placeholder="..." />
+                      <marker date="1394170705856" expanded="true" signature="365:403" placeholder="..." />
+                    </folding>
+                  </state>
+                </provider>
+              </entry>
+            </file>
+          </leaf>
+        </state>
+      </content>
+    </window>
+  </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FavoritesManager">
     <favorites_list name="Iccan" />
@@ -35,10 +72,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="taakbeheer.html" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="taakbeheer.html" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/partials/taakbeheer.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="7" column="14" selection-start="81" selection-end="81" vertical-scroll-proportion="-4.576923" vertical-offset="0" max-vertical-offset="2567">
+            <state line="16" column="20" selection-start="253" selection-end="253" vertical-scroll-proportion="0.31300345" vertical-offset="0" max-vertical-offset="2703">
               <folding />
             </state>
           </provider>
@@ -56,7 +93,7 @@
       <file leaf-file-name="index.html" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="21" column="0" selection-start="942" selection-end="942" vertical-scroll-proportion="-11.769231" vertical-offset="51" max-vertical-offset="1292">
+            <state line="18" column="79" selection-start="858" selection-end="858" vertical-scroll-proportion="-9.807693" vertical-offset="51" max-vertical-offset="1292">
               <folding />
             </state>
           </provider>
@@ -76,27 +113,6 @@
           <provider selected="true" editor-type-id="text-editor">
             <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="-0.0" vertical-offset="0" max-vertical-offset="697">
               <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="app.js" pinned="false" current="true" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/app/js/app.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state line="285" column="0" selection-start="6504" selection-end="6504" vertical-scroll-proportion="0.45866364" vertical-offset="1584" max-vertical-offset="19482">
-              <folding>
-                <element signature="e#212#762#0" expanded="false" />
-                <element signature="e#803#1500#0" expanded="false" />
-                <element signature="e#1514#1604#0" expanded="false" />
-                <element signature="e#1644#2246#0" expanded="false" />
-                <element signature="e#2263#3396#0" expanded="false" />
-                <element signature="e#3413#3764#0" expanded="false" />
-                <element signature="e#3802#4585#0" expanded="false" />
-                <element signature="e#4996#5041#0" expanded="false" />
-                <element signature="e#5072#5109#0" expanded="false" />
-                <marker date="1394169091498" expanded="true" signature="334:347" placeholder="..." />
-                <marker date="1394169091498" expanded="true" signature="365:403" placeholder="..." />
-              </folding>
             </state>
           </provider>
         </entry>
@@ -158,12 +174,12 @@
         <option value="$PROJECT_DIR$/app/partials/license.html" />
         <option value="$PROJECT_DIR$/app/partials/lostpsw.html" />
         <option value="$PROJECT_DIR$/app/css/app.css" />
-        <option value="$PROJECT_DIR$/app/partials/taakbeheer.html" />
         <option value="$PROJECT_DIR$/app/partials/logbook.html" />
         <option value="$PROJECT_DIR$/app/partials/profile.html" />
         <option value="$PROJECT_DIR$/app/partials/vraagbeheer.html" />
         <option value="$PROJECT_DIR$/app/partials/login.html" />
         <option value="$PROJECT_DIR$/app/js/app.js" />
+        <option value="$PROJECT_DIR$/app/partials/taakbeheer.html" />
       </list>
     </option>
   </component>
@@ -475,23 +491,9 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app/index.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="21" column="0" selection-start="942" selection-end="942" vertical-scroll-proportion="-11.769231" vertical-offset="51" max-vertical-offset="1292">
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app/partials/register.html">
       <provider selected="true" editor-type-id="text-editor">
         <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="890">
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app/partials/taakbeheer.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="7" column="14" selection-start="81" selection-end="81" vertical-scroll-proportion="-4.576923" vertical-offset="0" max-vertical-offset="2567">
           <folding />
         </state>
       </provider>
@@ -533,9 +535,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/app/index.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="18" column="79" selection-start="858" selection-end="858" vertical-scroll-proportion="-9.807693" vertical-offset="51" max-vertical-offset="1292">
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/app/js/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="285" column="0" selection-start="6504" selection-end="6504" vertical-scroll-proportion="0.45866364" vertical-offset="1584" max-vertical-offset="19482">
+        <state line="717" column="34" selection-start="14047" selection-end="14047" vertical-scroll-proportion="0.48237884" vertical-offset="2605" max-vertical-offset="3774">
           <folding>
             <element signature="e#212#762#0" expanded="false" />
             <element signature="e#803#1500#0" expanded="false" />
@@ -544,11 +553,24 @@
             <element signature="e#2263#3396#0" expanded="false" />
             <element signature="e#3413#3764#0" expanded="false" />
             <element signature="e#3802#4585#0" expanded="false" />
+            <element signature="e#4618#7773#0" expanded="false" />
             <element signature="e#4996#5041#0" expanded="false" />
             <element signature="e#5072#5109#0" expanded="false" />
-            <marker date="1394169091498" expanded="true" signature="334:347" placeholder="..." />
-            <marker date="1394169091498" expanded="true" signature="365:403" placeholder="..." />
+            <element signature="e#5184#6593#0" expanded="false" />
+            <element signature="e#7808#8459#0" expanded="false" />
+            <element signature="e#8494#11324#0" expanded="false" />
+            <element signature="e#14647#18355#0" expanded="false" />
+            <element signature="e#18388#24371#0" expanded="false" />
+            <marker date="1394170705856" expanded="true" signature="334:347" placeholder="..." />
+            <marker date="1394170705856" expanded="true" signature="365:403" placeholder="..." />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/partials/taakbeheer.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="16" column="20" selection-start="253" selection-end="253" vertical-scroll-proportion="0.31300345" vertical-offset="0" max-vertical-offset="2703">
+          <folding />
         </state>
       </provider>
     </entry>
