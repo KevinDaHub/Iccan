@@ -28,7 +28,7 @@
             <file leaf-file-name="app.js" pinned="false" current="false" current-in-tab="true">
               <entry file="file://$PROJECT_DIR$/app/js/app.js">
                 <provider selected="true" editor-type-id="text-editor">
-                  <state line="717" column="34" selection-start="14047" selection-end="14047" vertical-scroll-proportion="0.48237884" vertical-offset="2605" max-vertical-offset="3774">
+                  <state line="719" column="44" selection-start="14134" selection-end="14134" vertical-scroll-proportion="0.23237886" vertical-offset="2866" max-vertical-offset="3774">
                     <folding>
                       <element signature="e#212#762#0" expanded="false" />
                       <element signature="e#803#1500#0" expanded="false" />
@@ -43,10 +43,10 @@
                       <element signature="e#5184#6593#0" expanded="false" />
                       <element signature="e#7808#8459#0" expanded="false" />
                       <element signature="e#8494#11324#0" expanded="false" />
-                      <element signature="e#14647#18355#0" expanded="false" />
-                      <element signature="e#18388#24371#0" expanded="false" />
-                      <marker date="1394170705856" expanded="true" signature="334:347" placeholder="..." />
-                      <marker date="1394170705856" expanded="true" signature="365:403" placeholder="..." />
+                      <element signature="e#14645#18353#0" expanded="false" />
+                      <element signature="e#18386#24369#0" expanded="false" />
+                      <marker date="1394171938069" expanded="true" signature="334:347" placeholder="..." />
+                      <marker date="1394171938069" expanded="true" signature="365:403" placeholder="..." />
                     </folding>
                   </state>
                 </provider>
@@ -75,7 +75,7 @@
       <file leaf-file-name="taakbeheer.html" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/partials/taakbeheer.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="16" column="20" selection-start="253" selection-end="253" vertical-scroll-proportion="0.31300345" vertical-offset="0" max-vertical-offset="2703">
+            <state line="41" column="25" selection-start="644" selection-end="644" vertical-scroll-proportion="0.273878" vertical-offset="459" max-vertical-offset="2737">
               <folding />
             </state>
           </provider>
@@ -544,7 +544,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app/js/app.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="717" column="34" selection-start="14047" selection-end="14047" vertical-scroll-proportion="0.48237884" vertical-offset="2605" max-vertical-offset="3774">
+        <state line="719" column="44" selection-start="14134" selection-end="14134" vertical-scroll-proportion="0.23237886" vertical-offset="2866" max-vertical-offset="3774">
           <folding>
             <element signature="e#212#762#0" expanded="false" />
             <element signature="e#803#1500#0" expanded="false" />
@@ -559,17 +559,17 @@
             <element signature="e#5184#6593#0" expanded="false" />
             <element signature="e#7808#8459#0" expanded="false" />
             <element signature="e#8494#11324#0" expanded="false" />
-            <element signature="e#14647#18355#0" expanded="false" />
-            <element signature="e#18388#24371#0" expanded="false" />
-            <marker date="1394170705856" expanded="true" signature="334:347" placeholder="..." />
-            <marker date="1394170705856" expanded="true" signature="365:403" placeholder="..." />
+            <element signature="e#14645#18353#0" expanded="false" />
+            <element signature="e#18386#24369#0" expanded="false" />
+            <marker date="1394171938069" expanded="true" signature="334:347" placeholder="..." />
+            <marker date="1394171938069" expanded="true" signature="365:403" placeholder="..." />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/partials/taakbeheer.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="16" column="20" selection-start="253" selection-end="253" vertical-scroll-proportion="0.31300345" vertical-offset="0" max-vertical-offset="2703">
+        <state line="41" column="25" selection-start="644" selection-end="644" vertical-scroll-proportion="0.273878" vertical-offset="459" max-vertical-offset="2737">
           <folding />
         </state>
       </provider>
