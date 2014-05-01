@@ -534,7 +534,7 @@ iccan.controller('LogbCtrl',['$scope','dataservice','$location',function($scope,
 
     $scope.nextLogQuestion=function(){
 
-        $scope.answer = "";
+
 
         if(i<$scope.items.length){
 
@@ -618,7 +618,7 @@ iccan.controller('VraagCtrl',['$scope','dataservice','$location',function($scope
 
 
         if(i<$scope.items.length-1){
-            alert($scope.item.id);
+
 
             if($scope.item.type=="schaal"){
 

@@ -81,24 +81,7 @@
             <button  id="histor" ng-click="getHistory()" class="btn-success">Geschiedenis...</button>
 
 
-            <div class="panel-group" id="accordion">
-                <div class="panel panel-default" ng-repeat="vraag in vvragen">
-                    <div class="panel-heading"  toggle target={{vraag.id}} ng-click="nextOne(item.bestand,item.type,item.omschrijving)">
-                        <h4 class="panel-title">
-                            <a href="#/" toggle target={{vraag.id}} ng-click="nextOne(item.bestand,item.type,item.omschrijving)">
 
-                                {{vraag.datum}}
-                            </a>
-                        </h4>
-                    </div>
-                    <div id={{item.taakid}} toggleable active-class="in" exclusion-group="accordion1"  class="panel-collapse collapse">
-                        <div class="panel-body">
-
-                            {{vraag.naam}} : {{vraag.antwoord}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
             <div id="history" ng-repeat="vraag in vvragen">
 
                 <p>{{vraag.naam}} : {{vraag.antwoord}}</p>
