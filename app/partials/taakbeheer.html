@@ -113,9 +113,9 @@
                                 <rating value="rate" max="max" ng-model="scor" readonly="isReadonly" on-hover="hoveringOver(value)" on-leave="overStar = null"></rating>
                                 <span class="label" ng-class="{'label-warning': percent<30, 'label-info': percent>=30 && percent<70, 'label-success': percent>=70}" ng-show="overStar && !isReadonly">{{percent}}%</span>
                                 <p>Did the task help you?</p>
-                                <textarea  ng-model="answer" rows="4" cols="6" placeholder="Comment..." class="topcoat-textarea"></textarea>
+                                <textarea  ng-model="answer" rows="4" cols="20" placeholder="Comment..." ></textarea>
 
-                                <button class="buttoncomp"  ng-click="enterSurvey(item.taakid,rate,answer)" class="btn btn-default">Done</button>
+                                <button id="buttoncomp"  ng-click="enterSurvey(item.taakid,rate,answer)" class="btn btn-default">Done</button>
 
 
                             </div>
@@ -134,7 +134,7 @@
 
 
 
-                            <button class="buttoncomp"  ng-click="taskComplete()" class="btn btn-default">Task Complete!</button>
+                            <button id="buttoncomp2"  ng-click="taskComplete()" class="btn btn-success">Complete task!</button>
                            </div>
 
                         </div>

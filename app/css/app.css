@@ -59,6 +59,11 @@ p{padding:5px 0}
     height: 50px;
     width: 100px;
 }
+#buttoncomp2{
+
+    height: 50px;
+    width: 150px;
+}
 #fixedleftbutton{
 
     position:fixed;
