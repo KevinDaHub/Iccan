@@ -8,16 +8,18 @@
 
     <!-- versionCode is optional and Android only -->
 
-    <preference name="phonegap-version" value="3.1.0" />
+    <preference name="phonegap-version" value="3.3.0" />
 
-    <name>Sample Config.xml</name>
+    <name>Iccan.xml</name>
 
     <description>
         An example for phonegap build docs.
     </description>
 
-    <author href="http://yoursite.com" email="you@youremail.com">
-        Your Name
+    <icon src="icon.png" />
+
+    <author href="http://yoursite.com" email="kevin.van.houtte1@gmail.com">
+        Kevin Van Houtte
     </author>
 
 </widget>

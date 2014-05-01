@@ -71,10 +71,19 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="profile.html" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="profile.html" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/partials/profile.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="131" column="6" selection-start="3271" selection-end="3271" vertical-scroll-proportion="0.63492066" vertical-offset="1667" max-vertical-offset="2584">
+            <state line="131" column="6" selection-start="3271" selection-end="3271" vertical-scroll-proportion="-21.538462" vertical-offset="1667" max-vertical-offset="2584">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="config.xml" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/app/config.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="24" column="9" selection-start="621" selection-end="621" vertical-scroll-proportion="0.4493392" vertical-offset="0" max-vertical-offset="908">
               <folding />
             </state>
           </provider>
@@ -123,7 +132,6 @@
     <option name="changedFiles">
       <list>
         <option value="$PROJECT_DIR$/app/partials/statistiek.html" />
-        <option value="$PROJECT_DIR$/app/config.xml" />
         <option value="$PROJECT_DIR$/app/partials/register.html" />
         <option value="$PROJECT_DIR$/app/partials/demo.html" />
         <option value="$PROJECT_DIR$/app/css/mobile-angular-ui-base.css" />
@@ -138,6 +146,7 @@
         <option value="$PROJECT_DIR$/app/css/app.css" />
         <option value="$PROJECT_DIR$/app/partials/profile.html" />
         <option value="$PROJECT_DIR$/app/js/controllers.js" />
+        <option value="$PROJECT_DIR$/app/config.xml" />
       </list>
     </option>
   </component>
@@ -384,17 +393,6 @@
     </breakpoint-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/app/js/controllers.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="104" column="45" selection-start="2618" selection-end="2618" vertical-scroll-proportion="0.0" vertical-offset="1768" max-vertical-offset="13039">
-          <folding>
-            <element signature="e#130#880#0" expanded="false" />
-            <element signature="e#967#3849#0" expanded="false" />
-            <element signature="e#3884#4534#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app/js/ng-mobile-menu.min.js">
       <provider selected="true" editor-type-id="text-editor">
         <state line="0" column="0" selection-start="0" selection-end="0" vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="587" />
@@ -493,7 +491,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/app/partials/profile.html">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="131" column="6" selection-start="3271" selection-end="3271" vertical-scroll-proportion="0.63492066" vertical-offset="1667" max-vertical-offset="2584">
+        <state line="131" column="6" selection-start="3271" selection-end="3271" vertical-scroll-proportion="-21.538462" vertical-offset="1667" max-vertical-offset="2584">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/config.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="24" column="9" selection-start="621" selection-end="621" vertical-scroll-proportion="0.4493392" vertical-offset="0" max-vertical-offset="908">
           <folding />
         </state>
       </provider>
