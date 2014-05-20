@@ -10,7 +10,7 @@
 
     <preference name="phonegap-version" value="3.3.0" />
 
-    <name>Iccan.xml</name>
+    <name>Iccan</name>
 
     <description>
         An example for phonegap build docs.
