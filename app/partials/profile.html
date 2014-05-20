@@ -81,21 +81,13 @@
 
 
 <div ng-show="check" >
-    <form class="form">
+    <form class="form" ng-submit="applyChanges(user)">
 
             <div class="form-group">
                 <div class="input-group">
 
 
-                    <input class="form-control" size="18" type="text" ng-model="voornaam"  ng-minlength=2 ng-maxlength=20 placeholder={{item.voornaam}} required />
-                </div>
-            </div>
-
-
-            <div class="form-group">
-                <div class="input-group">
-
-                    <input class="form-control" size="18" type="text" ng-model="naam" ng-minlength=2 ng-maxlength=20 placeholder={{item.naam}} required />
+                    <input class="form-control" size="18" type="text" ng-model="user.voornaam"  ng-minlength=2 ng-maxlength=20 placeholder={{item.voornaam}} required />
                 </div>
             </div>
 
@@ -103,26 +95,23 @@
             <div class="form-group">
                 <div class="input-group">
 
-
-                    <input class="form-control" size="18" type="email" ng-model="email" placeholder={{item.email}} required />
+                    <input class="form-control" size="18" type="text" ng-model="user.naam" ng-minlength=2 ng-maxlength=20 placeholder={{item.naam}} required />
                 </div>
             </div>
 
-        <div class="form-group">
-            <div class="input-group">
 
-                <div class="input-group date" id="datetimepicker1">
-                    <input type="date" ng-model="geboortedatum" data-date-format="dd/mm/yyyy" class="form-control" placeholder="Geboortedatum" required />
+            <div class="form-group">
+                <div class="input-group">
 
 
-
+                    <input class="form-control" size="18" type="email" ng-model="user.email" placeholder={{item.email}} required />
                 </div>
             </div>
-        </div>
 
 
 
-        <button class="btn btn-primary"  ng-click="applyChanges()">Pas aan</button>
+
+        <input type="submit" class="btn btn-primary"  value="Pas aan" />
 
 
 

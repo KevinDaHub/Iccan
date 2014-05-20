@@ -63,7 +63,12 @@
 <div class="vraaglog" >
     <p>{{item.naam}}</p>
 </div>
-<div class="antwoordlog" data-ng-show="check" >
+
+
+            <div class="antwoordlog" data-ng-show="done">
+            <p style="color:#47a447">Alles is ingevuld! Kom morgen terug voor een nieuwe vragenronde!</p>
+            </div>
+<div class="antwoordlog" data-ng-show="schaal" >
     <div>
         <input ng-model="answer" class="topcoat-range"  min="1" max="10"  type="range" />
         {{answer}}
@@ -71,7 +76,7 @@
     </div>
 </div>
 
-<div class="antwoord" data-ng-hide="check">
+<div class="antwoord" data-ng-show="comment">
     <textarea  ng-model="answer" rows="4" cols="36" placeholder="Comment..."></textarea>
 
 

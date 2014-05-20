@@ -30,126 +30,119 @@
 </style>
 
 
-
 <div class="scrollable">
+    <div class="scrollable-content">
 
 
+        <img class="logo" src="logoiccan2.png"/>
 
-<div class="scrollable-content">
+        <form role="form" class="form">
 
-
-
-
-    <img class="logo" src="logoiccan2.png" />
-    <form  role="form" class="form" >
-
-
-
-
-
-
-
-
-        <div class="form-group">
-
-            <div class="input-group">
-
-                <input class="form-control" type="text"  ng-minlength=2 ng-maxlength=20 ng-model="user.gebruiker" placeholder="Gebruikersnaam..." required />
-            </div>
-        </div>
-        <div class="form-group">
-
-            <div class="input-group">
-
-                <input class="form-control" name="psw" type="password" ng-minlength=4 ng-maxlength=18 ng-model="user.pass" placeholder="Wachtwoord..." required />
-            </div>
-        </div>
-        <div ng-cloak ng-show="createMode">
 
             <div class="form-group">
+
                 <div class="input-group">
 
-                    <input class="form-control" size="18" type="password" ng-model="user.confirm" ng-minlength=4 ng-maxlength=18 placeholder="Confirm wachtwoord" required />
+                    <input class="form-control" type="text" ng-minlength=2 ng-maxlength=20 ng-model="user.gebruiker"
+                           placeholder="Gebruikersnaam..." required/>
                 </div>
             </div>
-
             <div class="form-group">
+
                 <div class="input-group">
 
-
-                    <input class="form-control" size="18" type="text" ng-model="user.naam"  ng-minlength=2 ng-maxlength=20 placeholder="Naam..." required />
+                    <input class="form-control" name="psw" type="password" ng-minlength=4 ng-maxlength=18
+                           ng-model="user.pass" placeholder="Wachtwoord..." required/>
                 </div>
             </div>
+            <div ng-cloak ng-show="createMode">
 
+                <div class="form-group">
+                    <div class="input-group">
 
-            <div class="form-group">
-                <div class="input-group">
-
-                    <input class="form-control" size="18" type="text" ng-model="user.achternaam" ng-minlength=2 ng-maxlength=20 placeholder="Achternaam..." required />
-                </div>
-            </div>
-
-
-            <div class="form-group">
-                <div class="input-group">
-
-
-                    <input class="form-control" size="18" type="email" ng-model="user.email" placeholder="Email..." required />
-                </div>
-            </div>
-
-
-            <div class="form-group">
-                <div class="input-group">
-
-
-                    <label class="topcoat-radio-button">
-                        M
-        <input ng-model="user.geslacht"  type="radio" value="m" >
-                <div class="topcoat-radio-button__checkmark"></div>
-                   </label>
-
-                    <label class="topcoat-radio-button">
-                        V
-                        <input ng-model="user.geslacht"  type="radio" value="v" >
-                        <div class="topcoat-radio-button__checkmark"></div>
-                    </label>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <div class="input-group">
-
-                    <div class="input-group date" id="datetimepicker1">
-                        <input type="date" ng-model="user.geboortedatum"  class="form-control" placeholder="Geboortedatum" required />
-
-
-
+                        <input class="form-control" size="18" type="password" ng-model="user.confirm" ng-minlength=4
+                               ng-maxlength=18 placeholder="Confirm wachtwoord" required/>
                     </div>
                 </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+
+
+                        <input class="form-control" size="18" type="text" ng-model="user.naam" ng-minlength=2
+                               ng-maxlength=20 placeholder="Naam..." required/>
+                    </div>
+                </div>
+
+
+                <div class="form-group">
+                    <div class="input-group">
+
+                        <input class="form-control" size="18" type="text" ng-model="user.achternaam" ng-minlength=2
+                               ng-maxlength=20 placeholder="Achternaam..." required/>
+                    </div>
+                </div>
+
+
+                <div class="form-group">
+                    <div class="input-group">
+
+
+                        <input class="form-control" size="18" type="email" ng-model="user.email" placeholder="Email..."
+                               required/>
+                    </div>
+                </div>
+
+
+                <div class="form-group">
+                    <div class="input-group">
+
+
+                        <label class="topcoat-radio-button">
+                            M
+                            <input ng-model="user.geslacht" type="radio" value="m">
+
+                            <div class="topcoat-radio-button__checkmark"></div>
+                        </label>
+
+                        <label class="topcoat-radio-button">
+                            V
+                            <input ng-model="user.geslacht" type="radio" value="v">
+
+                            <div class="topcoat-radio-button__checkmark"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="input-group">
+
+                        <div class="input-group date" id="datetimepicker1">
+                            <input type="date" ng-model="user.geboortedatum" class="form-control"
+                                   placeholder="Geboortedatum" required/>
+
+
+                        </div>
+                    </div>
+                </div>
+
+
             </div>
 
 
+            <div><a class="psw" href="#/lostpsw">Wachtwoord vergeten</a></div>
+            <div id="buttonss">
+                <button class="btn btn-primary" ng-click="login(user)" ng-hide="createMode">Login</button>
 
+                <button class="btn btn-default" ng-click="createMode = true" ng-hide="createMode">Inschrijven</button>
+                <button class="btn btn-primary" ng-cloak ng-show="createMode" ng-click="createAccount(user)">Klaar
+                </button>
+                <button class="btn btn-danger" ng-cloak ng-show="createMode" ng-click="createMode = false">Cancel
+                </button>
+            </div>
+            <p ng-show="err" class="error">{{err}}</p>
+        </form>
 
-        </div>
-
-
-
-
-
-
-        <div> <a class="psw" href="#/lostpsw">Wachtwoord vergeten</a></div>
-        <div id="buttonss">
-        <button  class="btn btn-primary" ng-click="login(user)" ng-hide="createMode">Login</button>
-
-        <button  class="btn btn-default" ng-click="createMode = true" ng-hide="createMode">Inschrijven</button>
-        <button class="btn btn-primary" ng-cloak ng-show="createMode" ng-click="createAccount(user)">Klaar</button>
-        <button class="btn btn-danger" ng-cloak ng-show="createMode" ng-click="createMode = false">Cancel</button>
-</div>
-        <p ng-show="err" class="error">{{err}}</p>
-    </form>
-
-        </div>
+    </div>
 
 </div>

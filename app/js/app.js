@@ -5,7 +5,7 @@ var username = "anonymous";
 
 
 
-var iccan = angular.module('iccan',['iccan.controllers', 'ngRoute','mobile-angular-ui','ngTouch','shoppinpal.mobile-menu','ui.bootstrap']);
+var iccan = angular.module('iccan',['iccan.controllers', 'ngRoute','mobile-angular-ui','ngTouch','shoppinpal.mobile-menu','ui.bootstrap','ngCookies']);
 
 
 iccan.factory('dataservice',['$http',function($http){
