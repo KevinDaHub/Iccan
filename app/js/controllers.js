@@ -96,8 +96,8 @@ iccan.controller('LoginCtrl', ['$scope', '$location', 'dataservice', '$cookieSto
 
                     if ($scope.content.succes == 1) {
 
-                        $cookieStore.put('username', user.gebruiker);
-                        $cookieStore.put('loggedin', true);
+                        window.sessionStorage.setItem('username', user.gebruiker);
+                        window.sessionStorage.setItem('loggedin', true);
 
                         $location.path('/license');
 
@@ -140,9 +140,11 @@ iccan.controller('LoginCtrl', ['$scope', '$location', 'dataservice', '$cookieSto
 
 
             if ($scope.content.succes == 1) {
-                $cookieStore.put('username', user.gebruiker);
-                $cookieStore.put('loggedin', true);
-
+                /*
+                window.sessionStorage.setItem('username', user.gebruiker);
+                window.sessionStorage.setItem('loggedin', true);
+*/
+                window.sessionStorage.setItem("username",user.gebruiker);
                 $location.path('/taakbeheer');
 
             } else {
@@ -193,7 +195,7 @@ iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieS
 
     $scope.check = false;
 
-    $scope.username = $cookieStore.get('username');
+    $scope.username = window.sessionStorage.getItem("username");
 
     $scope.goTaak = function () {
         $location.path('/taakbeheer');
@@ -203,8 +205,8 @@ iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieS
         $location.path('/logboek');
     };
     $scope.logout = function () {
-        $cookieStore.remove('username');
-        $cookieStore.remove('loggedin');
+        window.sessionStorage.removeItem('username');
+        window.sessionStorage.removeItem('loggedin');
         $location.path('/login');
 
     };
@@ -222,7 +224,7 @@ iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieS
     $scope.resetPsw = function () {
 
         var FormData = {
-            'username': $cookieStore.get('username'),
+            'username': window.sessionStorage.getItem('username'),
             'email': $scope.item.email
 
         };
@@ -252,7 +254,7 @@ iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieS
 
 
         var FormData2 = {
-            'username': $cookieStore.get('username'),
+            'username': window.sessionStorage.getItem('username'),
             'name': user.voornaam,
             'surname': user.naam,
             'sex': $scope.item.geslacht,
@@ -307,7 +309,8 @@ iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieS
 iccan.controller('TaakCtrl', ['$scope', 'dataservice', '$location', '$cookieStore', function ($scope, dataservice, $location, $cookieStore) {
 
 
-    $scope.user = $cookieStore.get('username');
+    $scope.user = window.sessionStorage.getItem('username');
+    console.log(window.sessionStorage.getItem('username'));
 
     $scope.max = 10;
     $scope.value = 7;
@@ -365,8 +368,8 @@ iccan.controller('TaakCtrl', ['$scope', 'dataservice', '$location', '$cookieStor
         $location.path('/logboek');
     };
     $scope.logout = function () {
-        $cookieStore.remove('username');
-        $cookieStore.remove('loggedin');
+        window.sessionStorage.removeItem('username');
+        window.sessionStorage.removeItem('loggedin');
         $location.path('/login');
     };
     $scope.goProfile = function () {
@@ -430,12 +433,12 @@ iccan.controller('TaakCtrl', ['$scope', 'dataservice', '$location', '$cookieStor
 iccan.controller('LogbCtrl', ['$scope', 'dataservice', '$location', '$cookieStore', function ($scope, dataservice, $location, $cookieStore) {
 
    $scope.done=false;
-    $scope.user = $cookieStore.get('username');
+    $scope.user = window.sessionStorage.getItem('username');
 
     $scope.answers = [];
 
     $scope.answer = 1;
-    $scope.answers.push({'username': $cookieStore.get('username')});
+    $scope.answers.push({'username': window.sessionStorage.getItem('username')});
 
     $scope.value = "10";
     $scope.options = {
@@ -477,8 +480,8 @@ iccan.controller('LogbCtrl', ['$scope', 'dataservice', '$location', '$cookieStor
         $location.path('/logboek');
     };
     $scope.logout = function () {
-        $cookieStore.remove('username');
-        $cookieStore.remove('loggedin');
+        window.sessionStorage.removeItem('username');
+        window.sessionStorage.removeItem('loggedin');
         $location.path('/login');
     };
     $scope.goProfile = function () {
@@ -488,7 +491,7 @@ iccan.controller('LogbCtrl', ['$scope', 'dataservice', '$location', '$cookieStor
 
     $scope.getHistory = function () {
 
-        $scope.user = $cookieStore.get('username');
+        $scope.user = window.sessionStorage.getItem('username');
 
 
         var FormData = {
@@ -573,7 +576,7 @@ iccan.controller('VraagCtrl', ['$scope', 'dataservice', '$location', '$cookieSto
     $scope.answers = [];
     $scope.answer = 1;
     $scope.begin = true;
-    $scope.answers.push({'username': $cookieStore.get('username')});
+    $scope.answers.push({'username': window.sessionStorage.getItem('username')});
 
 
     var handleSucces = function (data, status) {
