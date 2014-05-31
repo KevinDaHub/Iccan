@@ -86,9 +86,10 @@ p{padding:5px 0}
 
 #fixedbutton{
 
-    position:fixed;
+    margin-left:50%;
+   /* position:fixed;
     bottom:0;
-    right:0;
+    right:0;*/
     height:50px;
     width:100px;
 }
