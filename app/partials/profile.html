@@ -123,12 +123,12 @@
     <button class="btn btn-danger"  ng-click="resetQuestions()">Reset Questions</button>
     <button class="btn btn-danger" ng-click="resetPsw()">Reset Password</button>
 
-    <form ng-submit="resetwachtwoord(user)" data-ng-show="reset" style="margin-top:2%;">
+    <form ng-submit="resetWachtwoord(password)" data-ng-show="reset" style="margin-top:2%;">
         <div class="form-group">
             <div class="input-group">
 
 
-                <input class="form-control" size="18" type="text" ng-model="user2.password"  ng-minlength=2 ng-maxlength=20 placeholder="Nieuw Wachtwoord"  />
+                <input class="form-control" size="18" type="text" ng-model="password.oud"  ng-minlength=2 ng-maxlength=20 placeholder="Oud Wachtwoord"  />
             </div>
         </div>
 
@@ -136,7 +136,7 @@
         <div class="form-group">
             <div class="input-group">
 
-                <input class="form-control" size="18" type="text" ng-model="user2.confirm" ng-minlength=2 ng-maxlength=20 placeholder="Confirmeer Wachtwoord"/>
+                <input class="form-control" size="18" type="text" ng-model="password.nieuw" ng-minlength=2 ng-maxlength=20 placeholder="Nieuw Wachtwoord"/>
             </div>
         </div>
         <input type="submit" class="btn btn-primary"  value="Wijzig wachtwoord" />

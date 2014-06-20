@@ -16,6 +16,7 @@ iccan.controller('PasswordCtrl', ['$scope', '$location', 'dataservice', function
     };
 
 
+
     $scope.sendPassword = function () {
 
         var FormData = {
@@ -76,7 +77,7 @@ iccan.controller('LoginCtrl', ['$scope', '$location', 'dataservice', '$cookieSto
             if ($scope.pass == $scope.confirm) {
 
 
-                var pswh = sha256_digest(user.pass);
+
 
 
 
@@ -84,7 +85,11 @@ iccan.controller('LoginCtrl', ['$scope', '$location', 'dataservice', '$cookieSto
                 //var pswh = CryptoJS.SHA256(user.pass);
 
 
-                $scope.saltpsw = pswh + "ditzefoiqzeisEHOEUIHF54685çé!";
+                var psw= user.pass+'ditzefoiqzeisEHOEUIHF54685çé!"salt';
+
+
+
+                $scope.saltpsw = sha256_digest(psw);
 
 
                 var mydate = new Date(user.geboortedatum);
@@ -134,11 +139,13 @@ iccan.controller('LoginCtrl', ['$scope', '$location', 'dataservice', '$cookieSto
     };
     $scope.login = function (user) {
 
-        var pswh = sha256_digest(user.pass);
+        var psw= user.pass+'ditzefoiqzeisEHOEUIHF54685çé!"salt';
 
 
-       $scope.saltpsw = pswh + "ditzefoiqzeisEHOEUIHF54685çé!";
 
+        $scope.saltpsw = sha256_digest(psw);
+
+        alert($scope.saltpsw);
         var FormData = {
             'username': user.gebruiker,
             'password': $scope.saltpsw
@@ -265,6 +272,50 @@ iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieS
     };
     $scope.resetWachtwoord = function(user){
 
+
+
+        var oudpsw= user.oud+'ditzefoiqzeisEHOEUIHF54685çé!"salt';
+
+
+
+        $scope.oudsaltpsw = sha256_digest(oudpsw);
+
+
+        var nieuwpsw= user.nieuw+'ditzefoiqzeisEHOEUIHF54685çé!"salt';
+
+
+
+        $scope.nieuwsaltpsw = sha256_digest(nieuwpsw);
+
+
+        var FormData2 = {
+            'username': window.sessionStorage.getItem('username'),
+            'oldpass':$scope.oudsaltpsw,
+            'newpass':$scope.nieuwsaltpsw
+
+
+        };
+
+        var handleSucces2 = function (data, status) {
+            $scope.contents = data.berichten;
+            $scope.content = $scope.contents[0];
+            $scope.status = status;
+
+            if ($scope.content.succes == 1) {
+                $scope.update = false;
+                $scope.view=true;
+                $scope.reset=false;
+                alert("Password changed successful");
+                $scope.getUser();
+            } else {
+
+                $scope.err = "Invalid data";
+
+            }
+
+
+        };
+        dataservice.postItem('POST', 'http://www.iccan.be/scripts/changepass.php', FormData2, 'application/x-www-form-urlencoded').success(handleSucces2);
 
 
 
