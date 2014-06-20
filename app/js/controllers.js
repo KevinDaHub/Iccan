@@ -89,7 +89,7 @@ iccan.controller('LoginCtrl', ['$scope', '$location', 'dataservice', '$cookieSto
 
 
 
-                $scope.saltpsw = sha256_digest(psw);
+                $scope.saltpsw = Sha256.hash(psw);
 
 
                 var mydate = new Date(user.geboortedatum);
@@ -143,9 +143,8 @@ iccan.controller('LoginCtrl', ['$scope', '$location', 'dataservice', '$cookieSto
 
 
 
-        $scope.saltpsw = sha256_digest(psw);
+        $scope.saltpsw = Sha256.hash(psw);
 
-        alert($scope.saltpsw);
         var FormData = {
             'username': user.gebruiker,
             'password': $scope.saltpsw
@@ -278,14 +277,14 @@ iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieS
 
 
 
-        $scope.oudsaltpsw = sha256_digest(oudpsw);
+        $scope.oudsaltpsw = Sha256.hash(oudpsw);
 
 
         var nieuwpsw= user.nieuw+'ditzefoiqzeisEHOEUIHF54685çé!"salt';
 
 
 
-        $scope.nieuwsaltpsw = sha256_digest(nieuwpsw);
+        $scope.nieuwsaltpsw = Sha256.hash(nieuwpsw);
 
 
         var FormData2 = {
