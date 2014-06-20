@@ -9,6 +9,12 @@ var iccan = angular.module('iccan.controllers', [])
  */
 iccan.controller('PasswordCtrl', ['$scope', '$location', 'dataservice', function ($scope, $location, dataservice) {
 
+    $scope.goLogin = function(){
+
+
+         $location.path('/login');
+    };
+
 
     $scope.sendPassword = function () {
 
@@ -17,6 +23,8 @@ iccan.controller('PasswordCtrl', ['$scope', '$location', 'dataservice', function
             'email': $scope.email
 
         };
+
+
         var handleSucces = function (data, status) {
             $scope.status = status;
             $scope.msgs = data.berichten;
@@ -24,6 +32,7 @@ iccan.controller('PasswordCtrl', ['$scope', '$location', 'dataservice', function
             $scope.msg = $scope.msgs[0];
             if ($scope.msg.succes == 1) {
                 alert("Email has been successfully send!")
+                $location.path('/login');
             } else {
                 alert("Invalid username/email");
             }
@@ -67,7 +76,12 @@ iccan.controller('LoginCtrl', ['$scope', '$location', 'dataservice', '$cookieSto
             if ($scope.pass == $scope.confirm) {
 
 
-                var pswh = CryptoJS.SHA256(user.pass);
+                var pswh = sha256_digest(user.pass);
+
+
+
+
+                //var pswh = CryptoJS.SHA256(user.pass);
 
 
                 $scope.saltpsw = pswh + "ditzefoiqzeisEHOEUIHF54685çé!";
@@ -109,7 +123,7 @@ iccan.controller('LoginCtrl', ['$scope', '$location', 'dataservice', '$cookieSto
 
                 };
 
-                dataservice.postItem('POST', 'http://iccan.be/scripts/registreer.php', FormData, 'application/x-www-form-urlencoded').success(handleSucces);
+               dataservice.postItem('POST', 'http://iccan.be/scripts/registreer.php', FormData, 'application/x-www-form-urlencoded').success(handleSucces);
             } else {
                 alert("passwords do not match");
             }
@@ -120,10 +134,10 @@ iccan.controller('LoginCtrl', ['$scope', '$location', 'dataservice', '$cookieSto
     };
     $scope.login = function (user) {
 
-        var pswh = CryptoJS.SHA256(user.pass);
+        var pswh = sha256_digest(user.pass);
 
 
-        $scope.saltpsw = pswh + "ditzefoiqzeisEHOEUIHF54685çé!";
+       $scope.saltpsw = pswh + "ditzefoiqzeisEHOEUIHF54685çé!";
 
         var FormData = {
             'username': user.gebruiker,
@@ -193,9 +207,29 @@ iccan.controller('LicenseCtrl', ['$scope', '$location', '$http', function ($scop
 
 iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieStore', function ($scope, $location, dataservice, $cookieStore) {
 
-    $scope.check = false;
+    $scope.view = true;
+    $scope.update = false;
+    $scope.reset=false;
 
     $scope.username = window.sessionStorage.getItem("username");
+
+    $scope.getUser = function () {
+        var FormData = {
+            'username': $scope.username
+        };
+
+        var handleSucces = function (data, status) {
+            $scope.items = data.user;
+            $scope.item = $scope.items[0];
+            $scope.status = status;
+            $scope.view = true;
+        };
+        dataservice.postItem('POST', 'http://iccan.be/scripts/getuser.php', FormData, 'application/x-www-form-urlencoded').success(handleSucces);
+
+    };
+
+    $scope.getUser();
+
 
     $scope.goTaak = function () {
         $location.path('/taakbeheer');
@@ -213,34 +247,26 @@ iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieS
     $scope.goProfile = function () {
 
         $location.path('/profiel');
-    }
+    };
 
     $scope.editUser = function () {
 
-        $scope.check = true;
+
+        $scope.view=false;
+        $scope.update = true;
+        $scope.reset=false;
 
     };
 
     $scope.resetPsw = function () {
 
-        var FormData = {
-            'username': window.sessionStorage.getItem('username'),
-            'email': $scope.item.email
+       $scope.reset = true;
 
-        };
-        var handleSucces = function (data, status) {
-            $scope.status = status;
-            $scope.msgs = data.berichten;
+    };
+    $scope.resetWachtwoord = function(user){
 
-            $scope.msg = $scope.msgs[0];
-            if ($scope.msg.succes == 1) {
-                alert("Email has been successfully send!")
-            } else {
-                alert("Invalid username/email");
-            }
 
-        };
-        dataservice.postItem('POST', 'http://iccan.be/scripts/requestpasschange.php', FormData, 'application/x-www-form-urlencoded').success(handleSucces);
+
 
     };
 
@@ -250,7 +276,25 @@ iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieS
         $location.path('/vraagbeheer');
     };
 
-    $scope.applyChanges = function (user) {
+    $scope.applyChanges = function(user) {
+
+
+if(user ==null || user== undefined){
+    user = $scope.item;
+}
+        if(user.voornaam == null || user.voornaam == undefined){
+            user.voornaam = $scope.item.voornaam;
+
+        }
+        if(user.email == null || user.email == undefined){
+            user.email = $scope.item.email;
+
+        }
+        if(user.naam == null || user.naam == undefined){
+            user.naam = $scope.item.naam;
+
+        }
+
 
 
         var FormData2 = {
@@ -269,7 +313,7 @@ iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieS
             $scope.status = status;
 
             if ($scope.content.succes == 1) {
-                $scope.check = false;
+                $scope.update = false;
                 $scope.getUser();
             } else {
 
@@ -278,30 +322,15 @@ iccan.controller('ProfileCtrl', ['$scope', '$location', 'dataservice', '$cookieS
             }
 
 
-        }
+        };
         dataservice.postItem('POST', 'http://iccan.be/scripts/edituser.php', FormData2, 'application/x-www-form-urlencoded').success(handleSucces2);
 
 
     };
 
 
-    $scope.getUser = function () {
-        var FormData = {
-            'username': $scope.username
-        };
-
-        var handleSucces = function (data, status) {
-            $scope.items = data.user;
-            $scope.item = $scope.items[0];
-            $scope.status = status;
-            $scope.edit = true;
-        };
-        dataservice.postItem('POST', 'http://iccan.be/scripts/getuser.php', FormData, 'application/x-www-form-urlencoded').success(handleSucces);
-
-    };
 
 
-    $scope.getUser();
 
 
 }]);

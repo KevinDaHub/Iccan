@@ -62,7 +62,7 @@
     <h2 class="h2">{{username}}</h2>
 
 
-    <div  ng-hide="check" >
+    <div  ng-show="view" >
 
         <ul class="ulprofile">
             <li>Voornaam: {{item.voornaam}}</li>
@@ -80,14 +80,14 @@
 
 
 
-<div ng-show="check" >
-    <form class="form" ng-submit="applyChanges(user)">
+<div  >
+    <form ng-show="update" class="form" ng-submit="applyChanges(person)">
 
             <div class="form-group">
                 <div class="input-group">
 
 
-                    <input class="form-control" size="18" type="text" ng-model="user.voornaam"  ng-minlength=2 ng-maxlength=20 placeholder={{item.voornaam}} required />
+                    <input class="form-control" size="18" type="text" ng-model="person.voornaam"  ng-minlength=2 ng-maxlength=20 placeholder={{item.voornaam}} />
                 </div>
             </div>
 
@@ -95,7 +95,7 @@
             <div class="form-group">
                 <div class="input-group">
 
-                    <input class="form-control" size="18" type="text" ng-model="user.naam" ng-minlength=2 ng-maxlength=20 placeholder={{item.naam}} required />
+                    <input class="form-control" size="18" type="text" ng-model="person.naam" ng-minlength=2 ng-maxlength=20 placeholder={{item.naam}} />
                 </div>
             </div>
 
@@ -104,7 +104,7 @@
                 <div class="input-group">
 
 
-                    <input class="form-control" size="18" type="email" ng-model="user.email" placeholder={{item.email}} required />
+                    <input class="form-control" size="18" type="email" ng-model="person.email" placeholder={{item.email}}  />
                 </div>
             </div>
 
@@ -120,11 +120,30 @@
     </form>
 </div>
 
+    <button class="btn btn-danger"  ng-click="resetQuestions()">Reset Questions</button>
     <button class="btn btn-danger" ng-click="resetPsw()">Reset Password</button>
 
-    <button class="btn btn-danger"  ng-click="resetQuestions()">Reset Questions</button>
+    <form ng-submit="resetwachtwoord(user)" data-ng-show="reset" style="margin-top:2%;">
+        <div class="form-group">
+            <div class="input-group">
 
-    </div>
+
+                <input class="form-control" size="18" type="text" ng-model="user2.password"  ng-minlength=2 ng-maxlength=20 placeholder="Nieuw Wachtwoord"  />
+            </div>
+        </div>
+
+
+        <div class="form-group">
+            <div class="input-group">
+
+                <input class="form-control" size="18" type="text" ng-model="user2.confirm" ng-minlength=2 ng-maxlength=20 placeholder="Confirmeer Wachtwoord"/>
+            </div>
+        </div>
+        <input type="submit" class="btn btn-primary"  value="Wijzig wachtwoord" />
+
+    </form>
+
+</div>
             </div>
         </div>
 
